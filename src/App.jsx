@@ -20,6 +20,7 @@ import ManagerDashboard from "./Manager/ManagerDashboard.jsx";
 import ManagerLayout from "./layouts/ManagerLayout.jsx";
 import ManagerRecord from "./Manager/ManagerRecord.jsx";
 import ManagerAccount from "./Manager/ManagerAccount.jsx";
+import ManagerInventory from './components/ManagerInventory'
 import ManagerSetting from "./Manager/ManagerSetting.jsx";
 
 import LeaderDashboard from "./Leader/LeaderDashboard.jsx";
@@ -127,6 +128,7 @@ export default function App() {
           <Route path="manager-record" element={<ManagerRecord tasks={tasks} />} />
           <Route path="manager-account" element={<ManagerAccount tasks={tasks} />} />
           <Route path="manager-setting" element={<ManagerSetting />} />
+          <Route path="/manager/inventory" element={<ManagerInventory />} />
         </Route>
 
         <Route element={<LeaderLayout onLogout={handleLogout} />}>

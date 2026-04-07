@@ -1,146 +1,89 @@
-// src/components/ManagerDashboard.jsx
-import React, { useState, useMemo } from 'react';
-import {
-    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-    CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
-import { ShoppingCart, DollarSign, ArrowUp } from 'lucide-react';
-import { getFinancialData } from '../data/dataAnalytics';
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { DollarSign, ShoppingCart, Calendar, ArrowUp } from 'lucide-react';
 
-// รับ props { tasks } เข้ามา
-const ManagerDashboard = ({ tasks }) => {
-    // Default เป็นดูภาพกว้าง 10 ปี เพื่อให้เห็นข้อมูลชัดเจน
-    const [timeRange, setTimeRange] = useState('1year');
+const ManagerDashboard = () => {
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [financialData, setFinancialData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // ส่ง tasks เข้าไปใน getFinancialData เพื่อคำนวณ
-    // useMemo ช่วยให้ไม่ต้องคำนวณใหม่ซ้ำๆ ถ้ายอดงานไม่ได้เปลี่ยน
-    const dashboardData = useMemo(() => getFinancialData(timeRange, tasks), [timeRange, tasks]);
+    useEffect(() => {
+        const fetchDashboard = async () => {
+            setLoading(true);
+            try {
+                const res = await axios.get(`/api/manager/financial-report?year=${selectedYear}`);
+                setFinancialData(res.data);
+                setLoading(false);
+            } catch (err) {
+                console.error(err);
+                setLoading(false);
+            }
+        };
+        fetchDashboard();
+    }, [selectedYear]);
 
-    const { salesData, stats, categoryData, customerData, COLORS, PIE_COLORS } = dashboardData;
+    // คำนวณข้อมูลสำหรับกราฟจาก financialData
+    const chartData = useMemo(() => {
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        return months.map((m, index) => {
+            const dataInMonth = financialData.filter(d => new Date(d.datework).getMonth() === index);
+            return {
+                month: m,
+                income: dataInMonth.reduce((sum, curr) => sum + Number(curr.income), 0),
+                expense: dataInMonth.reduce((sum, curr) => sum + Number(curr.total_cost), 0)
+            };
+        });
+    }, [financialData]);
 
-    if (!salesData) return <div className="p-4">Loading...</div>;
-
-    // ฟังก์ชันเปลี่ยนข้อความปุ่ม
-    const getButtonLabel = (range) => {
-        if (range === '1year') return 'รายเดือน (ปีนี้)';
-        if (range === '5years') return '5 ปีล่าสุด';
-        return '10 ปีล่าสุด';
-    };
+    const totalStats = useMemo(() => {
+        const income = financialData.reduce((sum, curr) => sum + Number(curr.income), 0);
+        const expense = financialData.reduce((sum, curr) => sum + Number(curr.total_cost), 0);
+        return { income, expense, profit: income - expense };
+    }, [financialData]);
 
     return (
-        <div style={{ marginLeft: '14rem', minHeight: '100vh', width: 'calc(100% - 14rem)', padding: '2rem' }}>
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manager Dashboard</h1>
-                <p className="text-muted">ข้อมูล 10 ปีย้อนหลังคือ Mockup, ปีปัจจุบันคำนวณจากงานที่ Approved แล้ว</p>
+        <div style={{ marginLeft: '14rem', width: 'calc(100% - 14rem)' }} className="p-5 bg-slate-50 min-h-screen">
+            {/* Header และตัวเลือกปี */}
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-2xl font-bold">Manager Dashboard</h1>
+                <select className="p-2 rounded-lg border shadow-sm" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+                    {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y}>ปี {y + 543}</option>)}
+                </select>
             </div>
 
-            {/* ส่วนปุ่มเลือกช่วงเวลา (1ปี / 5ปี / 10ปี) */}
-            <div className="mb-4 btn-group">
-                {['1year', '5years', '10years'].map(range => (
-                    <button
-                        key={range}
-                        type="button"
-                        className={`btn ${timeRange === range ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => setTimeRange(range)}
-                    >
-                        {getButtonLabel(range)}
-                    </button>
-                ))}
+            {/* Stat Cards */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+                <StatCard title="รายได้รวม" value={totalStats.income} color="blue" icon={<DollarSign />} />
+                <StatCard title="รายจ่ายรวม" value={totalStats.expense} color="red" icon={<ShoppingCart />} />
+                <StatCard title="กำไรสุทธิ" value={totalStats.profit} color="green" icon={<ArrowUp />} />
             </div>
 
-            {/* ส่วนแสดง Stat Cards (การ์ดตัวเลขสรุปผล) */}
-            <div className="row g-3 mb-4">
-                {stats.map((stat, idx) => (
-                    <div key={idx} className="col-12 col-md-6">
-                        <div className="card h-100 border-0 shadow-sm">
-                            <div className="card-body">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className={`${idx === 0 ? 'bg-primary' : 'bg-success'} text-white p-3 rounded`}>
-                                        {idx === 0 ? <DollarSign size={24} /> : <ShoppingCart size={24} />}
-                                    </div>
-                                    <div className="fw-bold d-flex align-items-center gap-1 text-success">
-                                        <ArrowUp size={16} /> {stat.change}
-                                    </div>
-                                </div>
-                                <h6 className="text-muted mb-1">{stat.title}</h6>
-                                <h3 className="fw-bold mb-0">{stat.value}</h3>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* กราฟเส้น (Growth Chart) */}
-            <div className="card shadow-sm mb-4">
-                <div className="card-body">
-                    <h5 className="card-title mb-4">ภาพรวมการเติบโต</h5>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={salesData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis yAxisId="left" />
-                            <YAxis yAxisId="right" orientation="right" />
-                            <Tooltip />
-                            <Legend />
-                            <Line yAxisId="left" type="monotone" dataKey="sales" name="ยอดขาย (บาท)" stroke="#0d6efd" activeDot={{ r: 8 }} />
-                            <Line yAxisId="right" type="monotone" dataKey="orders" name="จำนวนงาน" stroke="#198754" />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* กราฟวงกลมและแท่ง (Charts Row) */}
-            <div className="row g-4">
-                <div className="col-12 col-lg-6">
-                    <div className="card shadow-sm border-0 h-100">
-                        <div className="card-body">
-                            <h5 className="card-title mb-4">รายได้ตามหมวดหมู่</h5>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={categoryData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="category" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Bar dataKey="value" name="มูลค่า" fill="#8884d8">
-                                        {categoryData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-12 col-lg-6">
-                    <div className="card shadow-sm border-0 h-100">
-                        <div className="card-body">
-                            <h5 className="card-title mb-4">สัดส่วนลูกค้า</h5>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        data={customerData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        outerRadius={80}
-                                        label
-                                    >
-                                        {customerData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
+            {/* Chart */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <h5 className="font-bold mb-6">แนวโน้มรายรับ - รายจ่าย ปี {selectedYear + 543}</h5>
+                <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="income" name="รายได้" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="expense" name="รายจ่าย" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                </ResponsiveContainer>
             </div>
         </div>
     );
 };
+
+const StatCard = ({ title, value, color, icon }) => (
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div className={`p-3 rounded-2xl inline-block mb-3 bg-${color}-500 text-white`}>{icon}</div>
+        <div className="text-gray-400 text-sm">{title}</div>
+        <div className="text-2xl font-bold">฿{value.toLocaleString()}</div>
+    </div>
+);
 
 export default ManagerDashboard;
