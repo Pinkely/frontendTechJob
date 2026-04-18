@@ -30,7 +30,6 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
-  // --- ฟังก์ชันเข้าสู่ระบบ ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -52,37 +51,7 @@ const LoginPage = ({ onLogin }) => {
         // 4. ให้ Navigate ไปตาม Role แทนการไป /home
         navigate(getDashboardPath(data.user.role));
       } else {
-        setError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-      }
-      setIsLoading(false);
-    }
-  };
-
-  // --- ฟังก์ชันสมัครสมาชิก ---
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!registerData.username || !registerData.email || !registerData.password) {
-      setError("กรุณากรอกข้อมูลสำคัญให้ครบ (ชื่อผู้ใช้, อีเมล, รหัสผ่าน)");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showSuccess("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ");
-        setMode("login"); // กลับไปหน้า Login
-      } else {
-        setError(data.message || "สมัครสมาชิกไม่สำเร็จ");
+        setError(data.message || "การเข้าสู่ระบบล้มเหลว");
       }
     } catch (err) {
       setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
@@ -125,7 +94,6 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
-  // ส่วนจัดการ UI ด้านบน (Logo)
   const LogoSection = () => (
     <div className="flex items-center m-10 lg:m-20">
       <div className="text-6xl font-normal text-gray-800">Tech</div>
@@ -147,28 +115,10 @@ const LoginPage = ({ onLogin }) => {
         </h2>
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm mb-6 text-center">{error}</div>}
 
-      {/* กล่องฟอร์มหลัก */}
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-10 border-t-8 border-blue-400 transition-all">
-
-        {/* หัวข้อฟอร์ม */}
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {mode === "login" ? "เข้าสู่ระบบ TechJob" : mode === "register" ? "สมัครสมาชิกใหม่" : "ตั้งรหัสผ่านใหม่"}
-          </h2>
-        </div>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* ================= FORM: LOGIN ================= */}
-        {mode === "login" && (
+        {mode === "login" ? (
           <div className="space-y-6">
             {/* แก้ไขบรรทัดนี้: เปลี่ยน email เป็น usernameOrEmail และเพิ่ม placeholder ให้ชัดเจนขึ้น */}
             <input
-              id="username"
               type="text"
               value={usernameOrEmail}
               onChange={(e) => setUsernameOrEmail(e.target.value)}
@@ -177,7 +127,6 @@ const LoginPage = ({ onLogin }) => {
             />
 
             <input
-              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -196,9 +145,6 @@ const LoginPage = ({ onLogin }) => {
             <div className="text-center mt-4">
               <button className="text-blue-600 text-sm" onClick={() => setMode("forgot")}>
                 ลืมรหัสผ่าน?
-              </button>
-              <button className="text-blue-600 hover:text-blue-800 font-medium" onClick={() => { setMode("register"); setError(""); }}>
-                สมัครสมาชิก
               </button>
             </div>
           </div>

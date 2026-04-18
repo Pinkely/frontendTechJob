@@ -1,33 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
-
-const API_URL = 'http://localhost:3000';
-
-const AdminWork = () => {
-  const [selectedWork, setSelectedWork] = useState(null);
-  const [worksToApprove, setWorksToApprove] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // ดึงใบงานทั้งหมดจาก API
-  const fetchWorks = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/works/getAll`);
-      const data = await res.json();
-      setWorksToApprove(data.works || []);
-    } catch (err) {
-      setError('ไม่สามารถดึงข้อมูลได้');
-      console.error(err);
-    } finally {
-      setLoading(false);
-   } };
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button, Form, Dropdown, Table, Badge, InputGroup } from 'react-bootstrap';
 import Modal from 'react-bootstrap/Modal';
-}
-const API_URL = 'http://localhost:3000';
-
 const API_URL = 'http://localhost:3000/api';
 
 const AdminWork = () => {
