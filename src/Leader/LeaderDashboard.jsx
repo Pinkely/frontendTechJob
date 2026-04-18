@@ -136,7 +136,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
         }
 
         setLoading(true);
-        fetch(`http://localhost:3000/works/supervisor/${supervisorId}`)
+        fetch(`http://192.168.1.93:3000/works/supervisor/${supervisorId}`)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
@@ -174,7 +174,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // ===================================================
     useEffect(() => {
         if (!supervisorId) return;
-        fetch(`http://localhost:3000/works/supervisor/${supervisorId}/today`)
+        fetch(`http://192.168.1.93:3000/works/supervisor/${supervisorId}/today`)
             .then(res => res.json())
             .then(data => {
                 const works = Array.isArray(data) ? data : (data.works || []);
@@ -200,7 +200,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // Fetch ช่าง
     // ===================================================
     useEffect(() => {
-        fetch("http://localhost:3000/technicians")
+        fetch("http://192.168.1.93:3000/technicians")
             .then(res => res.json())
             .then(data => setTechnicians(data.technicians || data || []))
             .catch(err => console.error("Error fetching technicians:", err));

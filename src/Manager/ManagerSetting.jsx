@@ -62,7 +62,7 @@ const Settings = () => {
 
       // 2. ยิง API ไปดึงข้อมูลเต็ม (เช็ค URL ของ Backend ให้ตรงด้วยนะครับ)
       // เปลี่ยนจาก /api/users/ เป็นเส้นทางที่ตั้งไว้ (เช่น /api/manager/profile/)
-      axios.get(`http://localhost:3000/api/manager/profile/${loggedInUser.id}`)
+      axios.get(`http://192.168.1.93:3000/api/manager/profile/${loggedInUser.id}`)
         .then(response => {
           console.log("ข้อมูล User จาก Backend:", response.data);
           const userData = response.data;
@@ -106,7 +106,7 @@ const Settings = () => {
     if (loggedInUser && loggedInUser.id) {
       try {
         // เรียก API โดยส่งไอดี และข้อมูลใน state profile ไป
-        const response = await axios.put(`http://localhost:3000/api/manager/update-profile/${loggedInUser.id}`, {
+        const response = await axios.put(`http://192.168.1.93:3000/api/manager/update-profile/${loggedInUser.id}`, {
           name: profile.name,
           email: profile.email,
           phone: profile.phone
@@ -137,7 +137,7 @@ const Settings = () => {
     }
 
     try {
-      const response = await axios.put(`http://localhost:3000/api/manager/update-password/${loggedInUser.id}`, {
+      const response = await axios.put(`http://192.168.1.93:3000/api/manager/update-password/${loggedInUser.id}`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword
