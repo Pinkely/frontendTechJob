@@ -59,11 +59,15 @@ export default function App() {
   const handleLogin = (user) => {
     setIsAuthenticated(true);
     setUserType(user.role);
+    // เพิ่มบรรทัดนี้: เก็บข้อมูล user (เช่น user_id) ไว้ใน localStorage
+    localStorage.setItem("user", JSON.stringify(user));
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserType(null);
+    // เพิ่มบรรทัดนี้: ล้างข้อมูลเมื่อ Logout
+    localStorage.removeItem("user");
   };
 
   const getDashboardElement = (Component, expectedUserType, props = {}) => {

@@ -1,16 +1,18 @@
 import { Form, Button, Card, Row, Col, Nav, Tab } from 'react-bootstrap';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const Settings = () => {
   // --- State สำหรับเก็บค่าต่างๆ แยกตามหมวดหมู่ ---
 
-  // 1. Profile settings (ข้อมูลส่วนตัว)
+  // 1. Profile settings เปลี่ยนค่าเริ่มต้นให้เป็นค่าว่างไว้ก่อน
   const [profile, setProfile] = useState({
-    name: 'Manager User',
-    email: 'manager@company.com',
-    phone: '063-092-0000',
+    name: '',
+    email: '',
+    phone: '',
     avatar: null
   });
+
 
   // 2. System settings (ตั้งค่าระบบ: ภาษา, เวลา)
   const [system, setSystem] = useState({
@@ -36,6 +38,44 @@ const Settings = () => {
     loginAlert: true
   });
 
+  // --- เพิ่ม useEffect เพื่อดึงข้อมูลจาก Backend ---
+  useEffect(() => {
+    // ดึงข้อมูล User ที่ Login อยู่จาก LocalStorage
+    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+    console.log("ข้อมูลใน LocalStorage คือ:", loggedInUser);
+
+    // 1. แก้เป็น loggedInUser.id ให้ตรงกับคีย์ใน Object
+    if (loggedInUser && loggedInUser.id) {
+
+      // เซ็ตข้อมูลชุดแรกจาก LocalStorage ให้โชว์ชื่อและอีเมลทันทีไม่ต้องรอโหลด
+      setProfile({
+        name: loggedInUser.name || '',
+        email: loggedInUser.email || '',
+        phone: '', // ปล่อยว่างไว้ก่อน รอเบอร์โทรจาก Backend
+        avatar: null
+      });
+
+      // 2. ยิง API ไปดึงข้อมูลเต็ม (เช็ค URL ของ Backend ให้ตรงด้วยนะครับ)
+      // เปลี่ยนจาก /api/users/ เป็นเส้นทางที่ตั้งไว้ (เช่น /api/manager/profile/)
+      axios.get(`http://localhost:3000/api/manager/profile/${loggedInUser.id}`)
+        .then(response => {
+          console.log("ข้อมูล User จาก Backend:", response.data);
+          const userData = response.data;
+
+          // 3. เอาข้อมูลจาก Backend มาอัปเดตทับอีกรอบ เพื่อใส่เบอร์โทรศัพท์
+          setProfile({
+            name: userData.name || loggedInUser.name || '',
+            email: userData.email || loggedInUser.email || '',
+            phone: userData.phone || '', // ได้เบอร์โทรมาแล้ว!
+            avatar: null
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching user profile:", error);
+        });
+    }
+  }, []);
+
   // --- ฟังก์ชันจัดการการเปลี่ยนค่า (Handle Change) ---
   const handleProfileChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -54,13 +94,37 @@ const Settings = () => {
   };
 
   // ฟังก์ชันกดบันทึก
-  const handleSave = () => {
-    alert('บันทึกการตั้งค่าเรียบร้อยแล้ว');
-    console.log({ profile, system, notifications, security });
+  // ใน ManagerSetting.jsx หาฟังก์ชัน handleSave แล้วแทนที่ด้วยโค้ดนี้:
+  const handleSave = async () => {
+    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+
+    if (loggedInUser && loggedInUser.id) {
+      try {
+        // เรียก API โดยส่งไอดี และข้อมูลใน state profile ไป
+        const response = await axios.put(`http://localhost:3000/api/manager/update-profile/${loggedInUser.id}`, {
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone
+        });
+
+        if (response.status === 200) {
+          alert('บันทึกข้อมูลส่วนตัวลงฐานข้อมูลเรียบร้อยแล้ว');
+
+          // อัปเดตข้อมูลใน LocalStorage ด้วยเพื่อให้ชื่อที่ Navbar เปลี่ยนตาม (ถ้ามีแสดง)
+          const updatedUser = { ...loggedInUser, name: profile.name, email: profile.email };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+      } catch (error) {
+        console.error("Error saving profile:", error);
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      }
+    } else {
+      alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+    }
   };
 
   return (
-    <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem' }}>
+    <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem' }} >
       <h3 className="mb-4">
         <i className="bi bi-gear me-2"></i>
         ตั้งค่าระบบ
@@ -338,7 +402,7 @@ const Settings = () => {
           </Col>
         </Row>
       </Tab.Container>
-    </div>
+    </div >
   );
 };
 
