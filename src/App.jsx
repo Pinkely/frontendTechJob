@@ -11,7 +11,6 @@ import UserSheetV2 from "./User/UserSheetV2.jsx";
 
 import AdminDashboard from "./Admin/AdminDashboard.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
-import AdminMaterial from "./Admin/AdminMaterial.jsx";
 import AdminSetting from "./Admin/AdminSetting.jsx";
 import AdminMaterial from "./Admin/AdminMaterial.jsx";
 import AdminAccount from "./Admin/AdminAccount.jsx";

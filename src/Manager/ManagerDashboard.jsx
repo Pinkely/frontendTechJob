@@ -3,10 +3,10 @@ import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
-// รับ props { tasks } เข้ามา
-const ManagerDashboard = ({ tasks }) => {
-    // Default เป็นดูภาพกว้าง 10 ปี เพื่อให้เห็นข้อมูลชัดเจน
-    const [timeRange, setTimeRange] = useState('1year');
+const ManagerDashboard = () => {
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [financialData, setFinancialData] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDashboard = async () => {
