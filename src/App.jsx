@@ -39,7 +39,6 @@ const getDashboardPath = (userType) => {
     case 'manager': return '/manager';
     case 'leader': return '/leader';
     case 'user': return '/user';
-    // ถ้า Role ไม่ตรงกับอะไรเลย ให้เด้งกลับไปหน้า login เพื่อตัด Loop
     default: return '/login';
   }
 };
@@ -47,6 +46,9 @@ const getDashboardPath = (userType) => {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState(null);
+
+  // 1. เพิ่ม State สำหรับตรวจสอบ Session ตอน Refresh
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem("tasks");
@@ -57,18 +59,48 @@ export default function App() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
+  // 2. ใช้ useEffect เพื่อตรวจสอบ Session ตอนโหลดหน้าเว็บ (Refresh)
+  useEffect(() => {
+    const storedSession = localStorage.getItem("session");
+
+    if (storedSession) {
+      const sessionData = JSON.parse(storedSession);
+      const currentTime = new Date().getTime();
+
+      // เช็คว่าเวลาปัจจุบัน น้อยกว่าเวลาที่หมดอายุ (30 นาที) หรือไม่
+      if (currentTime < sessionData.expiry) {
+        setIsAuthenticated(true);
+        setUserType(sessionData.user.role);
+      } else {
+        // หากหมดเวลา 30 นาทีแล้ว ให้เคลียร์ข้อมูลทิ้ง
+        localStorage.removeItem("session");
+      }
+    }
+
+    // ตรวจสอบเสร็จแล้ว ให้เลิกโหลดและเริ่ม Render หน้าเว็บได้
+    setIsCheckingSession(false);
+  }, []);
+
   const handleLogin = (user) => {
     setIsAuthenticated(true);
     setUserType(user.role);
-    // เพิ่มบรรทัดนี้: เก็บข้อมูล user (เช่น user_id) ไว้ใน localStorage
-    localStorage.setItem("user", JSON.stringify(user));
+
+    // 3. กำหนดเวลา Session 30 นาที (30 นาที * 60 วินาที * 1000 มิลลิวินาที)
+    const expiryTime = new Date().getTime() + 30 * 60 * 1000;
+
+    // เก็บข้อมูล User พร้อมเวลาหมดอายุใน Key ใหม่ชื่อ "session"
+    const sessionData = {
+      user: user,
+      expiry: expiryTime
+    };
+    localStorage.setItem("session", JSON.stringify(sessionData));
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserType(null);
-    // เพิ่มบรรทัดนี้: ล้างข้อมูลเมื่อ Logout
-    localStorage.removeItem("user");
+    // ลบ session ออกเมื่อกด Logout
+    localStorage.removeItem("session");
   };
 
   const getDashboardElement = (Component, expectedUserType, props = {}) => {
@@ -76,11 +108,19 @@ export default function App() {
       <Component {...props} /> : <Navigate to="/login" replace />;
   };
 
+  // 4. แสดงหน้า Loading ระหว่างที่ระบบกำลังเช็ค localStorage ป้องกันการกระพริบไปหน้า Login
+  if (isCheckingSession) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to={getDashboardPath(userType)} replace /> : <LoginPage onLogin={handleLogin} />} />
-
         {/* User Routes */}
         <Route element={<UserLayout onLogout={handleLogout} />}>
           {/* ... code เดิม ... */}
@@ -132,8 +172,7 @@ export default function App() {
           <Route path="leader-setting" element={<LeaderSetting />} />
         </Route>
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
-      </Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />      </Routes>
     </Router>
   );
 }
