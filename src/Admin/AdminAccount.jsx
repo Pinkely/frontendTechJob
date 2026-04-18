@@ -1,7 +1,7 @@
 import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } from 'react-bootstrap';
 import { useState, useEffect, useRef, useMemo } from 'react';
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://192.168.1.93:3000/api';
 
 const AdminAccount = () => {
   const [users, setUsers] = useState([]);
@@ -144,6 +144,27 @@ const AdminAccount = () => {
     }
   };
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // สร้างตัวแปรเก็บข้อมูลที่จะส่งไป Backend
+  const payload = {
+    // ... ฟิลด์อื่นๆ ของคุณ เช่น name: nameRef.current.value,
+    role: selectedRole, // เพิ่มบรรทัดนี้เข้าไปส่งค่า role
+  };
+
+  try {
+    if (editMode) {
+      await axios.put(`${BASE_URL}/users/${editingUser.user_id}`, payload);
+    } else {
+      await axios.post(`${BASE_URL}/users/add`, payload);
+    }
+    // ... (โค้ดดึงข้อมูลใหม่และปิด Modal)
+  } catch (error) {
+    console.error("Error saving user:", error);
+  }
+};
+
   const saveClicked = async () => {
     const name = nameRef.current.value.trim();
     const nickname = nicknameRef.current.value.trim();
@@ -182,7 +203,7 @@ const AdminAccount = () => {
 
         if (!userRes.ok) throw new Error('ไม่สามารถบันทึกข้อมูลส่วนตัวได้');
 
-        const salaryRes = await fetch(`http://localhost:3000/salary/${currentId}`, {
+        const salaryRes = await fetch(`http://192.168.1.93:3000/salary/${currentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ salary: income }),
