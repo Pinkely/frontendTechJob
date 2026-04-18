@@ -4,7 +4,9 @@ import axios from 'axios';
 
 const AdminMaterial = () => {
     const [materials, setMaterials] = useState([]);
+    const [requests, setRequests] = useState([]); // เพิ่ม State สำหรับเก็บข้อมูลการเบิก
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchRequestTerm, setSearchRequestTerm] = useState(''); // ค้นหาในหน้าเบิก
     const [loading, setLoading] = useState(true);
 
     // ==========================================
@@ -21,7 +23,6 @@ const AdminMaterial = () => {
 
     const handleClose = () => {
         setShowModal(false);
-        // เคลียร์ข้อมูลฟอร์มเมื่อปิด
         setFormData({ material_code: '', name: '', quantity: '', unit: '' });
     };
 
@@ -38,14 +39,28 @@ const AdminMaterial = () => {
             const response = await axios.get('http://localhost:3000/api/materials');
             setMaterials(response.data);
         } catch (error) {
-            console.error("ดึงข้อมูลไม่มา เพราะ:", error);
-        } finally {
-            setLoading(false);
+            console.error("ดึงข้อมูลวัสดุไม่สำเร็จ:", error);
         }
     };
 
+    // เพิ่มฟังก์ชันดึงข้อมูลรายการเบิก
+    const fetchRequests = async () => {
+        try {
+            const response = await axios.get('http://localhost:3000/api/materials/requests');
+            setRequests(response.data);
+        } catch (error) {
+            console.error("ดึงข้อมูลคำขอเบิกไม่สำเร็จ:", error);
+        }
+    };
+
+    const loadAllData = async () => {
+        setLoading(true);
+        await Promise.all([fetchMaterials(), fetchRequests()]);
+        setLoading(false);
+    };
+
     useEffect(() => {
-        fetchMaterials();
+        loadAllData();
     }, []);
 
     // ==========================================
@@ -55,14 +70,12 @@ const AdminMaterial = () => {
         e.preventDefault();
         try {
             if (isEditing) {
-                // อัปเดตข้อมูล (แก้ไข)
                 await axios.put(`http://localhost:3000/api/materials/${formData.material_id}`, formData);
             } else {
-                // สร้างข้อมูลใหม่ (เพิ่ม)
-                await axios.post('http://localhost:3000/api/materials', formData);
+                await axios.post('http://localhost:3000/api/materials/add', formData); // แก้ endpoint ให้ตรงกับใน routes ( /add หรือ / )
             }
-            fetchMaterials(); // โหลดข้อมูลตารางใหม่
-            handleClose();    // ปิดหน้าต่าง Modal
+            fetchMaterials(); 
+            handleClose();    
         } catch (error) {
             console.error("บันทึกข้อมูลไม่สำเร็จ:", error);
             alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -76,19 +89,18 @@ const AdminMaterial = () => {
 
     const openEditModal = (item) => {
         setIsEditing(true);
-        // ดึงข้อมูลเดิมมาใส่ในฟอร์ม
         setFormData(item);
         setShowModal(true);
     };
 
     // ==========================================
-    // 4. ฟังก์ชัน ลบข้อมูล (Delete)
+    // 4. ฟังก์ชัน ลบข้อมูล และ จัดการสถานะ (Delete / Patch)
     // ==========================================
     const handleDelete = async (id) => {
         if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบวัสดุนี้?")) {
             try {
                 await axios.delete(`http://localhost:3000/api/materials/${id}`);
-                fetchMaterials(); // โหลดข้อมูลตารางใหม่หลังลบเสร็จ
+                fetchMaterials(); 
             } catch (error) {
                 console.error("ลบข้อมูลไม่สำเร็จ:", error);
                 alert("เกิดข้อผิดพลาดในการลบข้อมูล");
@@ -96,9 +108,32 @@ const AdminMaterial = () => {
         }
     };
 
+    // ฟังก์ชันอัปเดตสถานะการเบิกวัสดุ (อนุมัติ/ไม่อนุมัติ)
+    const handleUpdateStatus = async (requestId, status) => {
+        if (window.confirm(`ต้องการ "${status}" คำขอนี้ใช่หรือไม่?`)) {
+            try {
+                // สมมติว่า admin_id = 1 (คุณสามารถดึงจาก Context/Session ของระบบล็อกอินมาใส่แทนได้)
+                await axios.patch(`http://localhost:3000/api/materials/request/${requestId}/approve`, { 
+                    status: status, 
+                    admin_id: 1 
+                });
+                fetchRequests(); // รีเฟรชตารางคำขอเบิก
+            } catch (error) {
+                console.error("อัปเดตสถานะไม่สำเร็จ:", error);
+                alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
+            }
+        }
+    };
+
+    // ตัวกรองข้อมูล
     const filteredMaterials = materials.filter(item =>
         item.material_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredRequests = requests.filter(item =>
+        item.material_name?.toLowerCase().includes(searchRequestTerm.toLowerCase()) ||
+        item.tech_name?.toLowerCase().includes(searchRequestTerm.toLowerCase())
     );
 
     return (
@@ -128,9 +163,9 @@ const AdminMaterial = () => {
                             {/* วัสดุอุปกรณ์ (stock) */}
                             <Tab.Pane eventKey="stock">
                                 <Card className="border-0 shadow-sm">
+                                    {/* ... โค้ดคลังวัสดุส่วนเดิม ... */}
                                     <Card.Header className="bg-white d-flex justify-content-between align-items-center py-3">
                                         <h5 className="mb-0">รายการวัสดุทั้งหมด</h5>
-                                        {/* ผูกฟังก์ชันเพิ่มวัสดุ */}
                                         <Button variant="primary" size="sm" onClick={openAddModal}>
                                             <i className="bi bi-plus-lg me-1"></i> เพิ่มวัสดุใหม่
                                         </Button>
@@ -148,6 +183,7 @@ const AdminMaterial = () => {
                                         </Form.Group>
 
                                         <Table hover responsive className="align-middle">
+                                            {/* โค้ด Table หัวตารางส่วนคลังวัสดุเดิม */}
                                             <thead className="bg-light">
                                                 <tr>
                                                     <th>รหัส</th>
@@ -155,7 +191,6 @@ const AdminMaterial = () => {
                                                     <th>คงเหลือ</th>
                                                     <th>หน่วย</th>
                                                     <th className="text-center">จัดการ</th>
-                                                    <th>เปลี่ยนแปลงล่าสุด</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -173,25 +208,13 @@ const AdminMaterial = () => {
                                                             </td>
                                                             <td>{item.unit}</td>
                                                             <td className="text-center">
-                                                                {/* ผูกฟังก์ชันแก้ไข */}
-                                                                <Button 
-                                                                    variant="outline-warning" 
-                                                                    size="sm" 
-                                                                    className="me-1"
-                                                                    onClick={() => openEditModal(item)}
-                                                                >
+                                                                <Button variant="outline-warning" size="sm" className="me-1" onClick={() => openEditModal(item)}>
                                                                     <i className="bi bi-pencil"></i>
                                                                 </Button>
-                                                                {/* ผูกฟังก์ชันลบ */}
-                                                                <Button 
-                                                                    variant="outline-danger" 
-                                                                    size="sm"
-                                                                    onClick={() => handleDelete(item.material_id)}
-                                                                >
+                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(item.material_id)}>
                                                                     <i className="bi bi-trash"></i>
                                                                 </Button>
                                                             </td>
-                                                            <td>{item.created_at}</td>
                                                         </tr>
                                                     ))
                                                 ) : (
@@ -207,7 +230,7 @@ const AdminMaterial = () => {
                             <Tab.Pane eventKey="requests">
                                 <Card className="border-0 shadow-sm">
                                     <Card.Header className="bg-white py-3">
-                                        <h5 className="mb-0">คำขอเบิกวัสดุ</h5>
+                                        <h5 className="mb-0">รายการคำขอเบิกวัสดุ</h5>
                                     </Card.Header>
                                     <Card.Body>
                                          <Form.Group className="mb-3">
@@ -215,8 +238,8 @@ const AdminMaterial = () => {
                                                 <span className="input-group-text bg-white border-end-0"><i className="bi bi-search"></i></span>
                                                 <Form.Control
                                                     type="text"
-                                                    placeholder="ค้นหา..."
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    placeholder="ค้นหาชื่อวัสดุ หรือ ชื่อช่างเบิก..."
+                                                    onChange={(e) => setSearchRequestTerm(e.target.value)}
                                                 />
                                             </div>
                                         </Form.Group>
@@ -225,51 +248,54 @@ const AdminMaterial = () => {
                                             <thead className="bg-light">
                                                 <tr>
                                                     <th>รหัสคำขอ</th>
+                                                    <th>ผู้เบิก (ช่าง)</th>
                                                     <th>ชื่อวัสดุ</th>
-                                                    <th>จำนวน</th>
-                                                    <th>หน่วย</th>
-                                                    <th className="text-center">ยอมรับ</th>
-                                                    <th>เปลี่ยนแปลงล่าสุด</th>
+                                                    <th>จำนวนเบิก</th>
+                                                    <th>สถานะ</th>
+                                                    <th className="text-center">การจัดการ</th>
+                                                    <th>วันที่ขอเบิก</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {loading ? (
-                                                    <tr><td colSpan="5" className="text-center">กำลังโหลดข้อมูล...</td></tr>
-                                                ) : filteredMaterials.length > 0 ? (
-                                                    filteredMaterials.map(item => (
-                                                        <tr key={item.material_id}>
-                                                            <td><strong>{item.material_code}</strong></td>
-                                                            <td>{item.name}</td>
+                                                    <tr><td colSpan="7" className="text-center">กำลังโหลดข้อมูล...</td></tr>
+                                                ) : filteredRequests.length > 0 ? (
+                                                    filteredRequests.map(item => (
+                                                        <tr key={item.request_id}>
+                                                            <td><strong>REQ-{item.request_id}</strong></td>
+                                                            <td>{item.tech_name || '-'}</td>
+                                                            <td>{item.material_name || '-'}</td>
+                                                            <td>{item.quantity} {item.unit}</td>
                                                             <td>
-                                                                {item.quantity <= 5 ?
-                                                                    <Badge bg="danger">{item.quantity}</Badge> :
-                                                                    <span>{item.quantity}</span> }
+                                                                <Badge bg={
+                                                                    item.status === 'อนุมัติ' ? 'success' : 
+                                                                    item.status === 'ไม่อนุมัติ' ? 'danger' : 'warning'
+                                                                }>
+                                                                    {item.status}
+                                                                </Badge>
                                                             </td>
-                                                            <td>{item.unit}</td>
                                                             <td className="text-center">
-                                                                {/* ผูกฟังก์ชันแก้ไข */}
-                                                                <Button 
-                                                                    variant="outline-warning" 
-                                                                    size="sm" 
-                                                                    className="me-1"
-                                                                    onClick={() => openEditModal(item)}
-                                                                >
-                                                                    <i className="bi bi-pencil"></i>
-                                                                </Button>
-                                                                {/* ผูกฟังก์ชันลบ */}
-                                                                <Button 
-                                                                    variant="outline-danger" 
-                                                                    size="sm"
-                                                                    onClick={() => handleDelete(item.material_id)}
-                                                                >
-                                                                    <i className="bi bi-trash"></i>
-                                                                </Button>
+                                                                {/* ซ่อนปุ่มถ้าไม่ใช่สถานะ 'รออนุมัติ' */}
+                                                                {item.status === 'รออนุมัติ' ? (
+                                                                    <>
+                                                                        <Button variant="outline-success" size="sm" className="me-1" onClick={() => handleUpdateStatus(item.request_id, 'อนุมัติ')}>
+                                                                            <i className="bi bi-check-circle"></i> อนุมัติ
+                                                                        </Button>
+                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleUpdateStatus(item.request_id, 'ไม่อนุมัติ')}>
+                                                                            <i className="bi bi-x-circle"></i> ปฏิเสธ
+                                                                        </Button>
+                                                                    </>
+                                                                ) : (
+                                                                    <span className="text-muted">-</span>
+                                                                )}
                                                             </td>
-                                                            <td>{item.created_at}</td>
+                                                            <td>
+                                                                {item.request_at ? new Date(item.request_at).toLocaleDateString('th-TH') : '-'}
+                                                            </td>
                                                         </tr>
                                                     ))
                                                 ) : (
-                                                    <tr><td colSpan="5" className="text-center">ไม่พบข้อมูลวัสดุ</td></tr>
+                                                    <tr><td colSpan="7" className="text-center">ไม่พบข้อมูลคำขอเบิกวัสดุ</td></tr>
                                                 )}
                                             </tbody>
                                         </Table>
@@ -280,12 +306,11 @@ const AdminMaterial = () => {
 
                         </Tab.Content>
                     </Col>
-
                 </Row>
             </Tab.Container>
 
             {/* ========================================== */}
-            {/* 5. Modal สำหรับ เพิ่ม/แก้ไขข้อมูล */}
+            {/* 5. Modal สำหรับ เพิ่ม/แก้ไขข้อมูลวัสดุ */}
             {/* ========================================== */}
             <Modal show={showModal} onHide={handleClose}>
                 <Modal.Header closeButton>
