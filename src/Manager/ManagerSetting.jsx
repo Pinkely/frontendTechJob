@@ -13,7 +13,6 @@ const Settings = () => {
     avatar: null
   });
 
-
   // 2. System settings (ตั้งค่าระบบ: ภาษา, เวลา)
   const [system, setSystem] = useState({
     language: 'th',
@@ -36,6 +35,12 @@ const Settings = () => {
     twoFactor: false,
     sessionTimeout: '30',
     loginAlert: true
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   // --- เพิ่ม useEffect เพื่อดึงข้อมูลจาก Backend ---
@@ -120,6 +125,31 @@ const Settings = () => {
       }
     } else {
       alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert('รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน');
+      return;
+    }
+
+    try {
+      const response = await axios.put(`http://localhost:3000/api/manager/update-password/${loggedInUser.id}`, {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
+      });
+
+      if (response.status === 200) {
+        alert('เปลี่ยนรหัสผ่านสำเร็จ');
+        // ล้างฟอร์ม
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน');
     }
   };
 
@@ -375,17 +405,34 @@ const Settings = () => {
                     <h6 className="text-muted mb-3">เปลี่ยนรหัสผ่าน</h6>
                     <Form.Group className="mb-3">
                       <Form.Label>รหัสผ่านปัจจุบัน</Form.Label>
-                      <Form.Control type="password" style={{ width: '300px' }} />
+                      <Form.Control
+                        type="password"
+                        style={{ width: '300px' }}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      />
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>รหัสผ่านใหม่</Form.Label>
-                      <Form.Control type="password" style={{ width: '300px' }} />
+                      <Form.Control
+                        type="password"
+                        style={{ width: '300px' }}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      />
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>ยืนยันรหัสผ่านใหม่</Form.Label>
-                      <Form.Control type="password" style={{ width: '300px' }} />
+                      <Form.Control
+                        type="password"
+                        style={{ width: '300px' }}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      />
                     </Form.Group>
-                    <Button variant="outline-primary">เปลี่ยนรหัสผ่าน</Button>
+                    <Button variant="outline-primary" onClick={handleChangePassword}>
+                      เปลี่ยนรหัสผ่าน
+                    </Button>
                   </Card.Body>
                 </Card>
               </Tab.Pane>
