@@ -2,82 +2,78 @@ import React, { useState } from 'react';
 import { Form, Button, Card, Row, Col, Nav, Tab } from 'react-bootstrap';
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
   
   body {
-    font-family: 'Kanit', sans-serif;
-    background-color: #f8f9fd;
+    font-family: 'Prompt', sans-serif;
+    background-color: #f4f4f5;
   }
 
   .glass-card {
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
   }
 
   /* Navigation Styling */
   .setting-nav .nav-link {
-    color: #64748b;
-    border-radius: 12px;
-    padding: 14px 20px;
-    margin-bottom: 8px;
-    transition: all 0.2s ease;
+    color: #4b5563;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 4px;
     font-weight: 500;
   }
   
   .setting-nav .nav-link:hover {
-    background-color: #f1f5f9;
-    color: #4a4eb7;
-    transform: translateX(5px);
+    background-color: #f3f4f6;
+    color: #111827;
   }
 
   .setting-nav .nav-link.active {
-    background-color: #4a4eb7;
+    background-color: #18181b;
     color: white;
-    box-shadow: 0 4px 12px rgba(74, 78, 183, 0.3);
   }
 
   /* Form Controls */
   .form-control, .form-select {
-    border-radius: 10px;
-    padding: 12px 15px;
-    border: 1px solid #e2e8f0;
-    background-color: #f8fafc;
+    border-radius: 6px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    background-color: #f9fafb;
   }
 
   .form-control:focus, .form-select:focus {
-    border-color: #4a4eb7;
-    box-shadow: 0 0 0 4px rgba(74, 78, 183, 0.1);
+    border-color: #18181b;
+    box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.1);
     background-color: #fff;
   }
 
   /* Switch Styling */
   .form-check-input:checked {
-    background-color: #4a4eb7;
-    border-color: #4a4eb7;
+    background-color: #18181b;
+    border-color: #18181b;
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, #4a4eb7 0%, #6c71e0 100%);
-    border: none;
+    background: #18181b;
+    border: 1px solid #18181b;
     color: white;
-    padding: 10px 25px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(74, 78, 183, 0.3);
-    transition: all 0.3s;
+    padding: 8px 20px;
+    border-radius: 6px;
+    transition: all 0.2s;
   }
   
   .btn-gradient:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(74, 78, 183, 0.4);
+    background: #27272a;
+    color: white;
   }
 
   .section-title {
-    color: #4a4eb7;
+    color: #111827;
     font-weight: 600;
     margin-bottom: 20px;
-    border-bottom: 2px solid #f1f5f9;
+    border-bottom: 1px solid #e5e7eb;
     padding-bottom: 10px;
   }
 `;
@@ -137,7 +133,7 @@ const LeaderSetting = () => {
     };
 
     return (
-        <div style={{ width: '100%', minHeight: '100vh', padding: "30px 50px", marginLeft: '14rem', backgroundColor: "#f8f9fd" }}>
+        <div style={{ width: '100%', minHeight: '100vh', padding: "30px 50px", marginLeft: '14rem', backgroundColor: "#f4f4f5" }}>
             <style>{styles}</style>
 
             {/* Header */}

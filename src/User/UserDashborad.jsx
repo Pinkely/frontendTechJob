@@ -16,14 +16,25 @@ const UserDashboard = () => {
   const [newMaterial, setNewMaterial] = useState({ name: '', quantity: '' });
   const [materialHistory, setMaterialHistory] = useState(initialMaterialHistory);
 
-  // --- ส่วนดึงข้อมูลจาก PHP ---
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        // เปลี่ยน URL เป็นที่อยู่ไฟล์ PHP ของคุณ
-        const response = await fetch('http://localhost/your_project/api_get_tasks.php?user_id=1');
+        // ✅ ดึง user_id จาก session จริง
+        const storedSession = JSON.parse(localStorage.getItem('session'));
+        const userId = storedSession?.user?.user_id || storedSession?.user?.id;
+
+        if (!userId) {
+          console.error("ไม่พบ userId ใน session");
+          setLoading(false);
+          return;
+        }
+
+        // ✅ เรียก Node.js API port 3000 ตาม workRoutes.js
+        const response = await fetch(`http://localhost:3000/works/technician/${userId}`);
         const data = await response.json();
-        setTasks(data);
+
+        // ✅ workRoutes ส่งกลับเป็น { works: [...] }
+        setTasks(data.works || []);
         setLoading(false);
       } catch (error) {
         console.error("Fetch error:", error);
@@ -33,26 +44,27 @@ const UserDashboard = () => {
     fetchTasks();
   }, []);
 
-  // --- คำนวณ Stats ---
+  // --- คำนวณ Stats --- (แก้ field ให้ตรงกับ DB จริง)
   const stats = useMemo(() => {
     const safeTasks = Array.isArray(tasks) ? tasks : [];
     const total = safeTasks.length;
-    const completed = safeTasks.filter(w => w.completed === true).length;
-    const inProgress = safeTasks.filter(w => !w.completed).length;
-
+    // ✅ เปลี่ยนจาก w.completed → w.status เพราะ DB ใช้ status
+    const completed = safeTasks.filter(w => w.status === 'completed' || w.status === 'เสร็จสิ้น').length;
+    const inProgress = safeTasks.filter(w => w.status !== 'completed' && w.status !== 'เสร็จสิ้น').length;
     const successRate = total ? Math.round((completed / total) * 100) : 0;
-
     return { total, completed, inProgress, successRate };
   }, [tasks]);
 
-  // --- คำนวณกราฟรายเดือน ---
+  // --- คำนวณกราฟรายเดือน --- (แก้ field datework → start_date)
   const monthlyData = useMemo(() => {
     const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
     const data = months.map(m => ({ name: m, jobs: 0 }));
 
     tasks.forEach(task => {
-      if (task.datework) {
-        const date = new Date(task.datework);
+      // ✅ เปลี่ยนจาก task.datework → task.start_date ให้ตรงกับ DB
+      const dateField = task.start_date || task.datework;
+      if (dateField) {
+        const date = new Date(dateField);
         if (!isNaN(date.getTime())) {
           const monthIndex = date.getMonth();
           data[monthIndex].jobs += 1;
@@ -62,6 +74,7 @@ const UserDashboard = () => {
     return data;
   }, [tasks]);
 
+  // ... ส่วนที่เหลือคงเดิมทุกอย่าง
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewMaterial(prev => ({ ...prev, [name]: name === 'quantity' ? parseInt(value) || '' : value }));
@@ -79,7 +92,7 @@ const UserDashboard = () => {
   if (loading) return <div className="p-5 text-center">กำลังเชื่อมต่อข้อมูลจากฐานข้อมูล...</div>;
 
   return (
-    <div className='p-4' style={{ width: '100%', minHeight: '100vh', background: '#F0F8FF', marginLeft: '14rem' }}>
+    <div className='p-4' style={{ width: '100%', minHeight: '100vh', background: '#F0F8FF', marginLeft: '15rem' }}>
       <div className='p-4'>
         <h1 className='fw-bolder mb-4 text-primary'>หน้าหลัก (งานของฉัน)</h1>
         <hr />

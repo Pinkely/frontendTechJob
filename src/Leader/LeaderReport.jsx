@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import { getTechnicians } from "../data/dataCore"; // ดึงข้อมูลช่าง
 
 const theme = {
-    primary: "#FF6B81",
-    primaryHover: "#FF4757",
-    secondary: "#F1F2F6",
-    textDark: "#2F3542",
-    textLight: "#747D8C",
-    bg: "#fdfdfdff",
+    primary: "#18181b",
+    primaryHover: "#27272a",
+    secondary: "#f3f4f6",
+    textDark: "#111827",
+    textLight: "#4b5563",
+    bg: "#f4f4f5",
     white: "#FFFFFF",
-    shadow: "0 10px 20px rgba(0,0,0,0.05)",
-    radius: "16px",
+    shadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
+    radius: "8px",
 };
 
 export default function LeaderReport() {
@@ -58,7 +58,7 @@ export default function LeaderReport() {
         actionBtn: { padding: "8px 20px", background: theme.primary, color: "white", border: "none", borderRadius: "30px", cursor: "pointer", fontWeight: "bold" },
         backBtn: { background: "transparent", border: "none", fontSize: "1.2rem", color: theme.textLight, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" },
         textarea: { width: "100%", minHeight: "120px", background: "#FAFAFA", border: "1px solid #E1E1E1", borderRadius: "12px", padding: "1rem", fontSize: "1rem", color: theme.textDark, outline: "none", resize: "vertical", marginBottom: "1.5rem" },
-        sendBtn: { width: "100%", padding: "14px", background: theme.primary, color: "white", border: "none", borderRadius: "12px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", boxShadow: "0 5px 15px rgba(255, 107, 129, 0.4)" },
+        sendBtn: { width: "100%", padding: "14px", background: theme.primary, color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)" },
         historyItem: { padding: "1.5rem", background: "#FFFFFF", borderRadius: "12px", marginBottom: "1rem", borderLeft: `5px solid ${theme.primary}`, boxShadow: "0 2px 5px rgba(0,0,0,0.03)", display: "flex", justifyContent: "space-between", alignItems: "center" },
     };
 
