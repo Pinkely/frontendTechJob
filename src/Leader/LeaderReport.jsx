@@ -1,16 +1,21 @@
-import React, { useState } from "react";
-import { getTechnicians } from "../data/dataCore"; // ดึงข้อมูลช่าง
+import React, { useState, useEffect, useMemo } from "react";
+import { Button, Table, Form } from "react-bootstrap";
+import "./leader.css";
 
-const theme = {
-    primary: "#18181b",
-    primaryHover: "#27272a",
-    secondary: "#f3f4f6",
-    textDark: "#111827",
-    textLight: "#4b5563",
-    bg: "#f4f4f5",
-    white: "#FFFFFF",
-    shadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-    radius: "8px",
+const getSupervisorId = () => {
+    try {
+        const userStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user.supervisor_id) return Number(user.supervisor_id);
+            if (user.id) return Number(user.id);
+        }
+        const sid = localStorage.getItem("supervisor_id") || sessionStorage.getItem("supervisor_id");
+        if (sid) return Number(sid);
+    } catch (e) {
+        console.error("getSupervisorId error:", e);
+    }
+    return null;
 };
 
 export default function LeaderReport() {
@@ -18,20 +23,36 @@ export default function LeaderReport() {
     const [reports, setReports] = useState([]);
     const [detail, setDetail] = useState("");
     const [note, setNote] = useState("");
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const technicians = getTechnicians(); 
+    const supervisorId = useMemo(() => getSupervisorId(), []);
 
-    
-    const jobs = technicians.map(t => ({
-        id: t.id,
-        namework: t.job || "งานทั่วไป",
-        typework: t.typework,
-        role: t.phone || "-",
-        datework: new Date().toLocaleDateString("th-TH"),
-        time: "09:00 - 17:00",
-        detail: "รายละเอียดงานของช่าง " + t.name,
-        completed: false,
-    }));
+    useEffect(() => {
+        if (!supervisorId) {
+            setLoading(false);
+            return;
+        }
+        fetch(`http://localhost:3000/works/supervisor/${supervisorId}`)
+            .then(res => res.json())
+            .then(data => {
+                const works = Array.isArray(data) ? data : (data.works || []);
+                const mapped = works.map(w => ({
+                    id: w.work_id || w.id,
+                    namework: w.job_name || w.namework || "งานทั่วไป",
+                    typework: w.job_type || w.typework || "-",
+                    role: w.location_name || w.location || w.role || "-",
+                    datework: w.start_date ? new Date(w.start_date).toLocaleDateString("th-TH") : new Date().toLocaleDateString("th-TH"),
+                    time: w.work_time || w.time || "-",
+                    detail: w.job_detail || w.detail || "",
+                    status: w.status || "Pending",
+                    completed: w.status === "Completed" || w.status === "เสร็จสิ้น",
+                }));
+                setJobs(mapped);
+            })
+            .catch(err => console.error("❌ Error fetching works:", err))
+            .finally(() => setLoading(false));
+    }, [supervisorId]);
 
     const handleSend = () => {
         if (!detail) return alert("กรุณากรอกรายละเอียดงาน");
@@ -49,76 +70,110 @@ export default function LeaderReport() {
         setNote("");
     };
 
-    const styles = {
-        container: { width: "100%", minHeight: "100vh", padding: "2rem", backgroundColor: theme.bg, fontFamily: "'Prompt', sans-serif" },
-        card: { background: theme.white, borderRadius: theme.radius, padding: "2rem", boxShadow: theme.shadow, marginBottom: "2rem", border: "1px solid #EAEAEA" },
-        table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 0.8rem" },
-        th: { textAlign: "left", color: theme.textLight, fontWeight: "600", padding: "1rem", borderBottom: `2px solid ${theme.secondary}` },
-        td: { background: theme.white, padding: "1.2rem 1rem", color: theme.textDark, borderTop: `1px solid ${theme.secondary}`, borderBottom: `1px solid ${theme.secondary}` },
-        actionBtn: { padding: "8px 20px", background: theme.primary, color: "white", border: "none", borderRadius: "30px", cursor: "pointer", fontWeight: "bold" },
-        backBtn: { background: "transparent", border: "none", fontSize: "1.2rem", color: theme.textLight, cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" },
-        textarea: { width: "100%", minHeight: "120px", background: "#FAFAFA", border: "1px solid #E1E1E1", borderRadius: "12px", padding: "1rem", fontSize: "1rem", color: theme.textDark, outline: "none", resize: "vertical", marginBottom: "1.5rem" },
-        sendBtn: { width: "100%", padding: "14px", background: theme.primary, color: "white", border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer", boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)" },
-        historyItem: { padding: "1.5rem", background: "#FFFFFF", borderRadius: "12px", marginBottom: "1rem", borderLeft: `5px solid ${theme.primary}`, boxShadow: "0 2px 5px rgba(0,0,0,0.03)", display: "flex", justifyContent: "space-between", alignItems: "center" },
-    };
-
     return (
-        <div style={styles.container}>
+        <div className="container-fluid py-5" style={{ marginLeft: "14rem", backgroundColor: "#f4f4f5", minHeight: "100vh" }}>
             {!selectedJob && (
-                <div style={{ maxWidth: "75%",marginLeft:"20rem" }}>
-                    <h1 style={{ color: theme.textDark }}>รายงานปัญหา / การทำงาน</h1>
-                    <div style={styles.card}>
-                        <table style={styles.table}>
+                <div className="container">
+                    <div className="d-flex justify-content-between align-items-center mb-5">
+                        <div>
+                            <h2 className="fw-bold mb-1" style={{ color: "#2c3e50" }}>รายงานปัญหา / การทำงาน</h2>
+                            <p className="text-muted">ดูรายการงานและแจ้งปัญหาที่เกิดขึ้นในการปฏิบัติงาน</p>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-4 mb-5 border-0 shadow-sm">
+                        {loading ? (
+                            <div className="text-center py-5">
+                                <div className="spinner-border text-primary" role="status"></div>
+                                <p className="mt-2 text-muted">กำลังโหลดข้อมูล...</p>
+                            </div>
+                        ) : (
+                        <Table hover responsive borderless className="align-middle leader-table">
                             <thead>
-                                <tr>
-                                    <th style={styles.th}>ID</th>
-                                    <th style={styles.th}>ชื่องาน</th>
-                                    <th style={styles.th}>ประเภทงาน</th>
-                                    <th style={styles.th}>สถานที่</th>
-                                    <th style={styles.th}>จัดการ</th>
+                                <tr className="border-bottom text-muted small text-uppercase fw-bold">
+                                    <th className="py-3">ID</th>
+                                    <th className="py-3">ชื่องาน</th>
+                                    <th className="py-3">ประเภทงาน</th>
+                                    <th className="py-3">สถานที่</th>
+                                    <th className="py-3 text-center">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {jobs.map(job => (
-                                    <tr key={job.id}>
-                                        <td style={styles.td}>{job.id}</td>
-                                        <td style={styles.td}>{job.namework}</td>
-                                        <td style={styles.td}>{job.typework}</td>
-                                        <td style={styles.td}>{job.role}</td>
-                                        <td style={styles.td}>
-                                            <button
-                                                style={styles.actionBtn}
-                                                onClick={() => { setSelectedJob(job); setDetail(job.detail); }}
-                                            >
+                                    <tr key={job.id} className="border-bottom-faint">
+                                        <td className="py-3 fw-medium">#{job.id}</td>
+                                        <td className="py-3">
+                                            <div className="fw-bold text-dark">{job.namework}</div>
+                                        </td>
+                                        <td className="py-3">
+                                            <span className="badge bg-light text-dark fw-medium border px-2 py-1">{job.typework}</span>
+                                        </td>
+                                        <td className="py-3 text-muted">
+                                            <i className="bi bi-geo-alt me-1 text-danger opacity-75"></i>{job.role}
+                                        </td>
+                                        <td className="py-3 text-center">
+                                            <Button variant="outline-primary" className="rounded-pill px-4 btn-sm fw-bold"
+                                                    onClick={() => { setSelectedJob(job); setDetail(job.detail); }}>
                                                 รายงาน
-                                            </button>
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
+                        </Table>
+                        )}
                     </div>
-                    {reports.length > 0 && reports.map((r, i) => (
-                        <div key={i} style={styles.historyItem}>
-                            <div>
-                                <div style={{ fontWeight: "bold" }}>{r.title}</div>
-                                <div>📍 {r.location}</div>
-                                <div>{r.detail}</div>
+
+                    {reports.length > 0 && (
+                        <div className="mt-5">
+                            <h5 className="fw-bold mb-4" style={{ color: "#2c3e50" }}>ประวัติการรายงานล่าสุด</h5>
+                            <div className="row g-4">
+                                {reports.map((r, i) => (
+                                    <div key={i} className="col-12">
+                                        <div className="glass-card p-4 border-start-thick border-primary">
+                                            <div className="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 className="fw-bold mb-1">{r.title}</h6>
+                                                    <div className="small text-muted mb-3">📍 {r.location}</div>
+                                                    <p className="mb-0 text-dark bg-light p-3 rounded-3">{r.detail}</p>
+                                                    {r.note && <p className="mt-2 small text-secondary italic">หมายเหตุ: {r.note}</p>}
+                                                </div>
+                                                <span className="badge bg-light text-muted fw-normal">{r.date}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div>{r.date}</div>
                         </div>
-                    ))}
+                    )}
                 </div>
             )}
+
             {selectedJob && (
-                <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-                    <button onClick={() => setSelectedJob(null)} style={styles.backBtn}><i class="bi bi-arrow-left" style={{fontSize:"30px"}}></i> ย้อนกลับ</button>
-                    <div style={styles.card}>
-                        <h2>{selectedJob.namework}</h2>
-                        <p>📍 {selectedJob.role}</p>
-                        <textarea style={styles.textarea} value={detail} onChange={e => setDetail(e.target.value)} />
-                        <textarea style={{ ...styles.textarea, minHeight: "80px" }} value={note} onChange={e => setNote(e.target.value)} />
-                        <button style={styles.sendBtn} onClick={handleSend}>ส่งรายงาน</button>
+                <div className="container" style={{ maxWidth: "800px" }}>
+                    <Button variant="link" onClick={() => setSelectedJob(null)} className="text-decoration-none text-muted p-0 mb-4 hover-primary">
+                        <i className="bi bi-arrow-left me-2"></i> ย้อนกลับ
+                    </Button>
+                    
+                    <div className="glass-card p-5">
+                        <h3 className="fw-bold mb-2">{selectedJob.namework}</h3>
+                        <div className="text-muted mb-4 pb-3 border-bottom">📍 {selectedJob.role}</div>
+                        
+                        <Form.Group className="mb-4">
+                            <Form.Label className="fw-bold small text-muted text-uppercase">รายละเอียดปัญหา / ผลการทำงาน</Form.Label>
+                            <Form.Control as="textarea" rows={5} value={detail} onChange={e => setDetail(e.target.value)}
+                                           className="rounded-4 border-light-subtle bg-light-subtle p-3" />
+                        </Form.Group>
+                        
+                        <Form.Group className="mb-4">
+                            <Form.Label className="fw-bold small text-muted text-uppercase">หมายเหตุเพิ่มเติม</Form.Label>
+                            <Form.Control as="textarea" rows={2} value={note} onChange={e => setNote(e.target.value)}
+                                           className="rounded-4 border-light-subtle bg-light-subtle p-3" />
+                        </Form.Group>
+                        
+                        <Button className="w-100 btn-gradient py-3 fw-bold rounded-4 shadow-sm" onClick={handleSend}>
+                            ส่งรายงาน
+                        </Button>
                     </div>
                 </div>
             )}
