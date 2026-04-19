@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Users, BarChart2, LogOut, Briefcase } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, LogOut, Briefcase, Settings } from 'lucide-react'
 
 const ManagerNavbar = ({ onLogout }) => {
     const location = useLocation()
@@ -10,16 +10,17 @@ const ManagerNavbar = ({ onLogout }) => {
     useEffect(() => { setActiveMenu(location.pathname) }, [location.pathname])
 
     const handleLogout = () => {
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
+        localStorage.removeItem('session') // แก้เป็น session ให้ตรงกับระบบ login ปัจจุบัน
         if (onLogout) onLogout()
         navigate('/login')
     }
 
     const menus = [
         { to: '/manager', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
-        { to: '/manager-account',     icon: <Users            size={17} />, label: 'Users' },
-        { to: '/manager-record',   icon: <BarChart2        size={17} />, label: 'Reports' },
+        { to: '/manager-account', icon: <Users size={17} />, label: 'Users' },
+        { to: '/manager-record', icon: <BarChart2 size={17} />, label: 'Reports' },
+        // เพิ่มเมนู Settings ตรงนี้
+        { to: '/manager-setting', icon: <Settings size={17} />, label: 'Settings' },
     ]
 
     return (
@@ -47,6 +48,14 @@ const ManagerNavbar = ({ onLogout }) => {
                     border-bottom: 1px solid rgba(147,197,253,0.35);
                     display: flex; flex-direction: column; align-items: center; gap: 6px;
                 }
+                
+                /* ทำให้ส่วน Logo เป็นปุ่มกดไปหน้า Setting */
+                .mnav-logo-link {
+                    display: flex; flex-direction: column; align-items: center; gap: 6px;
+                    text-decoration: none; cursor: pointer; transition: transform 0.2s;
+                }
+                .mnav-logo-link:hover { transform: scale(1.05); }
+
                 .mnav-logo-wrap {
                     width: 60px; height: 60px; border-radius: 16px;
                     background: linear-gradient(135deg,#3b82f6,#1d4ed8);
@@ -105,11 +114,13 @@ const ManagerNavbar = ({ onLogout }) => {
 
             <div className="mnav-wrap">
                 <div className="mnav-header">
-                    <div className="mnav-logo-wrap">
-                        <Briefcase size={28} color="#fff" />
-                    </div>
-                    <div className="mnav-title">ผู้จัดการ</div>
-                    <div className="mnav-sub">Manager Panel</div>
+                    <Link to="/manager-setting" className="mnav-logo-link">
+                        <div className="mnav-logo-wrap">
+                            <Briefcase size={28} color="#fff" />
+                        </div>
+                        <div className="mnav-title">ผู้จัดการ</div>
+                        <div className="mnav-sub">Manager Panel</div>
+                    </Link>
                     <button className="mnav-logout-btn" onClick={handleLogout}>
                         <LogOut size={14} /> Logout
                     </button>

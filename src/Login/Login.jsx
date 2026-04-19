@@ -13,7 +13,7 @@ const LoginPage = ({ onLogin }) => {
   const [successPopup, setSuccessPopup] = useState({ show: false, message: "" });
 
   // [แก้ไขจุดนี้] ให้ตรงกับ app.js ของ Backend (app.use('/api/auth', ...))
-  const API_URL = "http://192.168.1.93:3000/api/auth";
+  const API_URL = "http://192.168.1.106:3000/api/auth";
 
   const showSuccess = (message) => {
     setSuccessPopup({ show: true, message });

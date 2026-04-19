@@ -15,7 +15,6 @@ const ManagerAccount = () => {
     const [selectedJobDetail, setSelectedJobDetail] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // 🌟 States สำหรับ Filter ประวัติงานใน Popup
     const [historyYear, setHistoryYear] = useState('ทั้งหมด');
     const [historyMonth, setHistoryMonth] = useState('ทั้งหมด');
     const [historyLimit, setHistoryLimit] = useState('ทั้งหมด');
@@ -23,7 +22,10 @@ const ManagerAccount = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await axios.get('http://192.168.1.93:3000/api/manager/employees');
+                const res = await axios.get(`http://192.168.1.106:3000/api/manager/employees?t=${new Date().getTime()}`);
+
+                console.log("Data from API:", res.data?.workHistory);
+
                 setEmployees(res.data?.employees || []);
                 setAllWorkHistory(res.data?.workHistory || []);
                 setLoading(false);
@@ -48,25 +50,38 @@ const ManagerAccount = () => {
     }, [searchTerm, selectedRole, employees]);
 
     const handleSelectEmployee = (emp) => {
-        const history = allWorkHistory
-            .filter(h => Number(h.technician_id) === Number(emp.user_id))
-            .map(h => ({
-                id: h.work_id,
-                jobTitle: h.job_name,
-                location: h.location || 'ไม่ระบุ',
-                date: h.start_date ? new Date(h.start_date).toLocaleDateString('th-TH') : '-',
-                fullData: h
-            }));
+        let history = [];
 
-        setSelectedEmployee({ ...emp, jobHistory: history });
+        // 🌟 กรองข้อมูลประวัติงานตาม Role อย่างถูกต้อง
+        if (emp.role === 'admin') {
+            history = []; // Admin ไม่ดึงประวัติงาน
+        } else if (emp.role === 'supervisor') {
+            const uniqueWorks = new Map();
+            allWorkHistory.forEach(h => {
+                if (Number(h.supervisor_id) === Number(emp.user_id)) {
+                    uniqueWorks.set(h.work_id, h);
+                }
+            });
+            history = Array.from(uniqueWorks.values()); // Supervisor ดูเฉพาะงานที่คุม
+        } else {
+            history = allWorkHistory.filter(h => Number(h.technician_id) === Number(emp.user_id)); // Technician ดึงตามช่าง
+        }
+
+        const formattedHistory = history.map(h => ({
+            id: h.work_id,
+            jobTitle: h.job_name,
+            location: h.location || 'ไม่ระบุ',
+            date: h.start_date ? new Date(h.start_date).toLocaleDateString('th-TH') : '-',
+            fullData: h
+        }));
+
+        setSelectedEmployee({ ...emp, jobHistory: formattedHistory });
         setSelectedJobDetail(null);
-        // รีเซ็ต Filter เมื่อเลือกพนักงานคนใหม่
         setHistoryYear('ทั้งหมด');
         setHistoryMonth('ทั้งหมด');
         setHistoryLimit('ทั้งหมด');
     };
 
-    // 🌟 ใช้งาน Filter สำหรับประวัติใน Popup
     const filteredHistory = useMemo(() => {
         if (!selectedEmployee) return [];
         let results = selectedEmployee.jobHistory.filter(job => {
@@ -94,7 +109,6 @@ const ManagerAccount = () => {
         return results;
     }, [selectedEmployee, historyYear, historyMonth, historyLimit]);
 
-    // หาว่าพนักงานคนนี้มีงานในปีไหนบ้าง
     const availableHistoryYears = useMemo(() => {
         if (!selectedEmployee) return [];
         return [...new Set(selectedEmployee.jobHistory.map(job => {
@@ -103,7 +117,6 @@ const ManagerAccount = () => {
         }).filter(Boolean))].sort((a, b) => b - a);
     }, [selectedEmployee]);
 
-    // สี Badge สถานะงาน
     const getStatusBadge = (status) => {
         const styles = {
             'รอดำเนินการ': 'bg-secondary text-white',
@@ -120,8 +133,6 @@ const ManagerAccount = () => {
 
     return (
         <div style={{ marginLeft: '14rem', width: 'calc(100% - 14rem)' }} className="bg-light min-vh-100 p-5 font-sans">
-
-            {/* --- หน้าหลัก (ตารางรายชื่อพนักงาน) --- */}
             <div className="mb-5">
                 <h2 className="fw-bold text-dark mb-4">จัดการบัญชีบุคลากร</h2>
                 <div className="d-flex flex-wrap gap-3 align-items-center">
@@ -160,13 +171,11 @@ const ManagerAccount = () => {
                 )}
             </div>
 
-            {/* --- Modal (Popup) --- */}
             {selectedEmployee && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 d-flex align-items-center justify-content-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1050, backdropFilter: 'blur(2px)' }}>
                     <div className="bg-white rounded-4 shadow-lg w-100 max-w-3xl overflow-hidden animate-in position-relative">
 
                         {selectedJobDetail ? (
-                            // -------- View: รายละเอียดงาน --------
                             <>
                                 <div className="p-4 border-bottom d-flex justify-content-between align-items-center bg-light">
                                     <div className="d-flex align-items-center gap-3">
@@ -189,7 +198,6 @@ const ManagerAccount = () => {
                                 </div>
                             </>
                         ) : (
-                            // -------- View: หน้าโปรไฟล์พนักงาน & ประวัติงาน --------
                             <>
                                 <div className="p-4 border-bottom d-flex justify-content-between align-items-center bg-light">
                                     <div><h5 className="mb-0 fw-bold">ข้อมูลบุคลากร</h5></div>
@@ -197,7 +205,7 @@ const ManagerAccount = () => {
                                 </div>
                                 <div className="p-4 overflow-auto" style={{ maxHeight: '70vh' }}>
 
-                                    {/* ข้อมูลพนักงาน */}
+                                    {/* 🌟 กู้คืนข้อมูลพนักงานที่หายไปกลับมาตรงนี้ครับ */}
                                     <div className="d-flex flex-column flex-sm-row gap-4 align-items-center align-items-sm-start mb-4 p-4 bg-light rounded-4 border">
                                         <div className="rounded-circle d-flex align-items-center justify-content-center text-white shadow-sm flex-shrink-0" style={{ width: 80, height: 80, fontSize: 32, backgroundColor: selectedEmployee.role === 'admin' ? '#ef4444' : selectedEmployee.role === 'supervisor' ? '#3b82f6' : '#10b981' }}>
                                             {selectedEmployee.name ? selectedEmployee.name.charAt(0) : '?'}
@@ -217,13 +225,47 @@ const ManagerAccount = () => {
                                         </div>
                                     </div>
 
-                                    {/* 🌟 เครื่องมือ Filter ด้านบนประวัติงาน */}
+                                    {/* 🌟 การคำนวณที่แก้ไขให้กันพัง (NaN) แล้ว */}
+                                    {(() => {
+                                        let totalRev = 0, totalCost = 0, totalProfit = 0;
+                                        filteredHistory.forEach(job => {
+                                            const data = job.fullData;
+                                            totalRev += (Number(data.revenue) || 0);
+                                            totalCost += (Number(data.material_cost) || 0) + (Number(data.other_cost) || 0);
+                                            if (data.status === 'เสร็จสิ้น') {
+                                                totalProfit += (Number(data.profit) || 0);
+                                            }
+                                        });
+
+                                        return (
+                                            <div className="row g-3 mb-4">
+                                                <div className="col-12 col-md-4">
+                                                    <div className="p-3 bg-primary bg-opacity-10 rounded-4 border border-primary border-opacity-25 text-center shadow-sm">
+                                                        <div className="small text-primary fw-bold mb-1">รายได้รวม</div>
+                                                        <h5 className="mb-0 text-primary fw-bold">฿{totalRev.toLocaleString()}</h5>
+                                                    </div>
+                                                </div>
+                                                <div className="col-12 col-md-4">
+                                                    <div className="p-3 bg-danger bg-opacity-10 rounded-4 border border-danger border-opacity-25 text-center shadow-sm">
+                                                        <div className="small text-danger fw-bold mb-1">ต้นทุนรวม</div>
+                                                        <h5 className="mb-0 text-danger fw-bold">฿{totalCost.toLocaleString()}</h5>
+                                                    </div>
+                                                </div>
+                                                <div className="col-12 col-md-4">
+                                                    <div className="p-3 bg-success bg-opacity-10 rounded-4 border border-success border-opacity-25 text-center shadow-sm">
+                                                        <div className="small text-success fw-bold mb-1">กำไรรวม (เฉพาะงานเสร็จสิ้น)</div>
+                                                        <h5 className="mb-0 text-success fw-bold">฿{totalProfit.toLocaleString()}</h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
                                     <div className="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
                                         <h6 className="fw-bold mb-0 d-flex align-items-center gap-2">
                                             <Briefcase size={18} /> ประวัติการทำงาน ({filteredHistory.length})
                                         </h6>
                                         <div className="d-flex flex-wrap gap-2">
-                                            {/* Filter ปี */}
                                             <div className="input-group input-group-sm" style={{ width: '10rem' }}>
                                                 <span className="input-group-text bg-white"><Calendar size={14} /></span>
                                                 <select className="form-select border-start-0" value={historyYear} onChange={(e) => setHistoryYear(e.target.value)}>
@@ -231,14 +273,12 @@ const ManagerAccount = () => {
                                                     {availableHistoryYears.map(y => <option key={y} value={y}>ปี {Number(y) + 543}</option>)}
                                                 </select>
                                             </div>
-                                            {/* Filter เดือน */}
                                             <select className="form-select form-select-sm" style={{ width: '10rem' }} value={historyMonth} onChange={(e) => setHistoryMonth(e.target.value)}>
                                                 <option value="ทั้งหมด">ทุกเดือน</option>
                                                 {['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'].map((m, i) => (
                                                     <option key={i} value={(i + 1).toString()}>{m}</option>
                                                 ))}
                                             </select>
-                                            {/* Filter จำนวน (Limit) */}
                                             <div className="input-group input-group-sm" style={{ width: '10rem' }}>
                                                 <span className="input-group-text bg-white"><List size={14} /></span>
                                                 <select className="form-select border-start-0" value={historyLimit} onChange={(e) => setHistoryLimit(e.target.value)}>
@@ -251,12 +291,11 @@ const ManagerAccount = () => {
                                         </div>
                                     </div>
 
-                                    {/* ลิสต์ประวัติงานที่แสดงข้อมูลการเงิน */}
                                     {filteredHistory.length > 0 ? (
                                         <div className="list-group list-group-flush gap-2">
                                             {filteredHistory.map(job => {
                                                 const jobData = job.fullData;
-                                                const totalCost = Number(jobData.material_cost || 0) + Number(jobData.other_cost || 0);
+                                                const totalCost = (Number(jobData.material_cost) || 0) + (Number(jobData.other_cost) || 0);
                                                 return (
                                                     <button
                                                         key={job.id}
@@ -271,12 +310,11 @@ const ManagerAccount = () => {
                                                             </div>
                                                             <p className="text-muted small mb-2"><MapPin size={12} className="me-1" />{job.location}</p>
 
-                                                            {/* 🌟 ข้อมูลทางการเงิน */}
                                                             <div className="d-flex flex-wrap gap-3 small mt-1" style={{ fontSize: '0.8rem' }}>
-                                                                <span className="text-primary fw-medium">รายได้: ฿{Number(jobData.revenue || 0).toLocaleString()}</span>
+                                                                <span className="text-primary fw-medium">รายได้: ฿{(Number(jobData.revenue) || 0).toLocaleString()}</span>
                                                                 <span className="text-danger fw-medium">ต้นทุน: ฿{totalCost.toLocaleString()}</span>
                                                                 {jobData.status === 'เสร็จสิ้น' && (
-                                                                    <span className="text-success fw-bold">กำไร: ฿{Number(jobData.profit || 0).toLocaleString()}</span>
+                                                                    <span className="text-success fw-bold">กำไร: ฿{(Number(jobData.profit) || 0).toLocaleString()}</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -290,7 +328,7 @@ const ManagerAccount = () => {
                                         </div>
                                     ) : (
                                         <div className="text-center py-4 bg-light rounded-3 text-muted border border-dashed">
-                                            ไม่พบประวัติงานตามเงื่อนไขที่เลือก
+                                            {selectedEmployee.role === 'admin' ? "บัญชีระดับ Admin จะไม่แสดงประวัติงานในส่วนนี้" : "ไม่พบประวัติงานตามเงื่อนไขที่เลือก"}
                                         </div>
                                     )}
                                 </div>
@@ -303,7 +341,6 @@ const ManagerAccount = () => {
     );
 };
 
-// Component ย่อย: การ์ดแสดงข้อมูลเล็กๆ
 const InfoCard = ({ icon, color, label, value }) => {
     const bgClass = `bg-${color} bg-opacity-10 text-${color}`;
     return (
