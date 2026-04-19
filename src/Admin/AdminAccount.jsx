@@ -1,5 +1,6 @@
 import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } from 'react-bootstrap';
 import { useState, useEffect, useRef, useMemo } from 'react';
+import axios from 'axios';
 
 const BASE_URL = 'http://192.168.1.106:3000/api';
 
@@ -23,11 +24,12 @@ const AdminAccount = () => {
   const nicknameRef = useRef();
   const phoneRef = useRef();
   const emailRef = useRef();
-  const typeWorkRef = useRef();
+  const typeRef = useRef();
   const expertiseRef = useRef();
   const incomeRef = useRef();
 
   const roleRef = useRef();
+  const usernameRef = useRef();
   const [selectedRole, setSelectedRole] = useState('technician');
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +56,7 @@ const AdminAccount = () => {
         name: u.name,
         role: u.role,
         status: u.status,
-        type: u.type || '', 
+        type: u.type || '',
         income: Number(u.salary) || 0,
         phone: u.phone || '',
         email: u.email || '',
@@ -82,23 +84,26 @@ const AdminAccount = () => {
   };
   const handleShow = () => setShow(true);
 
-  useEffect(() => {
-    if (show && editMode && editingUser) {
-      setTimeout(() => {
-        if (nameRef.current) nameRef.current.value = editingUser.name || '';
-        if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
-        if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
-        if (emailRef.current) emailRef.current.value = editingUser.email || '';
-        if (typeWorkRef.current) typeWorkRef.current.value = editingUser.typework || '';
-        if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
-        if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
-        if (editingUser.role) setSelectedRole(editingUser.role);
-        // if (editingUser.profileImage) setImagePreview(editingUser.profileImage);
-      }, 100);
-    } else if (show && !editMode) {
-      setImagePreview(null);
-    }
-  }, [show, editMode, editingUser]);
+// ในไฟล์ AdminAccount.jsx
+useEffect(() => {
+  if (show && editMode && editingUser) {
+    setTimeout(() => {
+      if (nameRef.current) nameRef.current.value = editingUser.name || '';
+      if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
+      if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
+      if (emailRef.current) emailRef.current.value = editingUser.email || '';
+      
+      // แก้ไขตรงนี้: เปลี่ยนจาก type เป็น type
+      if (typeRef.current) typeRef.current.value = editingUser.type || ''; 
+      
+      if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
+      if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
+      if (editingUser.role) setSelectedRole(editingUser.role);
+    }, 100);
+  } else if (show && !editMode) {
+    setImagePreview(null);
+  }
+}, [show, editMode, editingUser]);
 
   const filteredUsers = useMemo(() => {
     const filtered = users.filter((user) => {
@@ -106,10 +111,10 @@ const AdminAccount = () => {
       const matchSearch = !searchTerm ||
         (user.name && user.name.toLowerCase().includes(searchLower)) ||
         (user.income && user.income.toString().includes(searchLower)) ||
-        (user.typework && user.typework.toLowerCase().includes(searchLower)) ||
+        (user.type && user.type.toLowerCase().includes(searchLower)) ||
         (user.id && user.id.toString().includes(searchTerm));
 
-      const matchType = !filterType || user.typework === filterType;
+      const matchType = !filterType || user.type === filterType;
       const matchStatus = !filterStatus || user.status === filterStatus;
       const matchRole = !filterRole || user.role === filterRole;
 
@@ -144,27 +149,39 @@ const AdminAccount = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+
+  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
+  const handleSave = async (e) => {
   e.preventDefault();
-  
-  // สร้างตัวแปรเก็บข้อมูลที่จะส่งไป Backend
+
   const payload = {
-    // ... ฟิลด์อื่นๆ ของคุณ เช่น name: nameRef.current.value,
-    role: selectedRole, // เพิ่มบรรทัดนี้เข้าไปส่งค่า role
+    name: nameRef.current?.value,
+    nickname: nicknameRef.current?.value,
+    phone: phoneRef.current?.value,
+    email: emailRef.current?.value,
+    role: selectedRole,
+    type: typeRef.current?.value,
+    expertise: expertiseRef.current?.value,
+    salary: incomeRef.current?.value || 0,
   };
 
   try {
     if (editMode) {
-      await axios.put(`${BASE_URL}/users/${editingUser.user_id}`, payload);
+      // แก้ไขข้อมูล (ไม่ต้องยุ่งกับรหัสผ่าน)
+      await axios.put(`${BASE_URL}/users/${editingUser.id}`, payload);
+      alert('แก้ไขข้อมูลสำเร็จ!');
     } else {
-      await axios.post(`${BASE_URL}/users/add`, payload);
-    }
-    // ... (โค้ดดึงข้อมูลใหม่และปิด Modal)
-  } catch (error) {
-    console.error("Error saving user:", error);
-  }
-};
+      // เพิ่มข้อมูลใหม่
+      const registerPayload = {
+        ...payload,
+        username: usernameRef.current?.value,
+        password: 'password123', // <--- ตั้งรหัสผ่านเริ่มต้นตรงนี้ (เช่น password123)
+      };
 
+<<<<<<< Updated upstream
+      if (!registerPayload.username) {
+        return alert("กรุณากรอก Username");
+=======
   const saveClicked = async () => {
     const name = nameRef.current.value.trim();
     const nickname = nicknameRef.current.value.trim();
@@ -223,20 +240,20 @@ const AdminAccount = () => {
         console.error('Update error:', err);
         alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
         return;
+>>>>>>> Stashed changes
       }
 
-    } else {
-      const newUser = {
-        user_id: users.reduce((prev, user) => (user.user_id > prev ? user.user_id : prev), 0) + 1,
-        ...userData,
-        income,
-        status: 'ว่าง'
-      };
-      setUsers([newUser, ...users]);
+      await axios.post(`${BASE_URL}/users/register`, registerPayload);
+      alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
     }
-
-    handleClose();
-  };
+    
+    setShow(false);
+    window.location.reload();
+  } catch (error) {
+    console.error("Error saving data:", error);
+    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
+  }
+};
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -253,7 +270,7 @@ const AdminAccount = () => {
   const goToNext = () => setCurPage(prev => Math.min(prev + 1, totalPages));
   const goToPrev = () => setCurPage(prev => Math.max(prev - 1, 1));
 
-  const totalWork = users.length;
+  const total = users.length;
   const totalIncome = users.reduce((sum, user) => sum + Number(user.income || 0), 0);
   const totalPresent = users.filter(user => user.status === 'กำลังทำงาน' || user.status === 'มา' || user.status === 'ว่าง').length;
 
@@ -331,7 +348,7 @@ const AdminAccount = () => {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label>ประเภทงาน <span className="text-danger">*</span></Form.Label>
-                  <Form.Select ref={typeWorkRef}>
+                  <Form.Select ref={typeRef}>
                     <option value="">-- เลือกประเภท --</option>
                     <option value="ช่างไฟฟ้า">ช่างไฟฟ้า</option>
                     <option value="ช่างประปา">ช่างประปา</option>
@@ -370,13 +387,24 @@ const AdminAccount = () => {
                     <option value="supervisor">👑 หัวหน้าช่าง (Supervisor)</option>
                   </Form.Select>
                 </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Username
+                    <span
+                      className="text-danger">*
+                    </span></Form.Label>
+                  <Form.Control
+                    ref={usernameRef}
+                    placeholder="ตั้งชื่อผู้ใช้ให้ช่าง"
+                    required
+                  />
+                </Form.Group>
               </Col>
             </Row>
           </Form>
         </Modal.Body>
         <Modal.Footer className="bg-light border-0">
           <Button variant="light" onClick={handleClose}>ยกเลิก</Button>
-          <Button variant="primary" onClick={saveClicked}><i className="bi bi-save me-2"></i>บันทึกข้อมูล</Button>
+          <Button variant="primary" onClick={handleSave}><i className="bi bi-save me-2"></i>บันทึกข้อมูล</Button>
         </Modal.Footer>
       </Modal>
 
@@ -397,7 +425,7 @@ const AdminAccount = () => {
                 <div className="card-body">
                   <div className="d-flex align-items-center">
                     <div className="bg-primary bg-opacity-10 p-3 rounded me-3"><i className="bi bi-people-fill text-primary fs-4"></i></div>
-                    <div><small className="text-muted">ช่างทั้งหมด</small><h3 className="mb-0">{totalWork}</h3></div>
+                    <div><small className="text-muted">ช่างทั้งหมด</small><h3 className="mb-0">{total}</h3></div>
                   </div>
                 </div>
               </div>
