@@ -4,14 +4,11 @@ import axios from 'axios';
 
 const AdminMaterial = () => {
     const [materials, setMaterials] = useState([]);
-    const [requests, setRequests] = useState([]); // เพิ่ม State สำหรับเก็บข้อมูลการเบิก
+    const [requests, setRequests] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchRequestTerm, setSearchRequestTerm] = useState(''); // ค้นหาในหน้าเบิก
+    const [searchRequestTerm, setSearchRequestTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // ==========================================
-    // 1. ส่วนจัดการ State สำหรับ Modal และ Form
-    // ==========================================
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -19,7 +16,7 @@ const AdminMaterial = () => {
         name: '',
         quantity: '',
         unit: '',
-        price: '' 
+        price: ''
     });
 
     const handleClose = () => {
@@ -32,9 +29,6 @@ const AdminMaterial = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // ==========================================
-    // 2. ฟังก์ชันดึงข้อมูล (Get)
-    // ==========================================
     const fetchMaterials = async () => {
         try {
             const response = await axios.get('http://192.168.1.93:3000/api/materials');
@@ -44,7 +38,6 @@ const AdminMaterial = () => {
         }
     };
 
-    // เพิ่มฟังก์ชันดึงข้อมูลรายการเบิก
     const fetchRequests = async () => {
         try {
             const response = await axios.get('http://192.168.1.93:3000/api/materials/requests');
@@ -64,9 +57,6 @@ const AdminMaterial = () => {
         loadAllData();
     }, []);
 
-    // ==========================================
-    // 3. ฟังก์ชัน เพิ่ม/แก้ไขข้อมูล (Post / Put)
-    // ==========================================
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -94,9 +84,6 @@ const AdminMaterial = () => {
         setShowModal(true);
     };
 
-    // ==========================================
-    // 4. ฟังก์ชัน ลบข้อมูล และ จัดการสถานะ (Delete / Patch)
-    // ==========================================
     const handleDelete = async (id) => {
         if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบวัสดุนี้?")) {
             try {
@@ -109,7 +96,6 @@ const AdminMaterial = () => {
         }
     };
 
-    // ฟังก์ชันอัปเดตสถานะการเบิกวัสดุ (อนุมัติ/ไม่อนุมัติ)
     const handleUpdateStatus = async (requestId, status) => {
         if (window.confirm(`ต้องการ "${status}" คำขอนี้ใช่หรือไม่?`)) {
             try {
@@ -117,11 +103,8 @@ const AdminMaterial = () => {
                     status: status,
                     admin_id: 1
                 });
-
-                // สั่งให้ดึงข้อมูลใหม่ทั้ง 2 ตารางเพื่ออัปเดตหน้าจอทันที
-                fetchRequests();  // รีเฟรชตารางรายการเบิก
-                fetchMaterials(); // รีเฟรชตารางคลังวัสดุ
-
+                fetchRequests();
+                fetchMaterials();
             } catch (error) {
                 console.error("อัปเดตสถานะไม่สำเร็จ:", error);
                 const errorMessage = error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตสถานะ";
@@ -130,7 +113,6 @@ const AdminMaterial = () => {
         }
     };
 
-    // ตัวกรองข้อมูล
     const filteredMaterials = materials.filter(item =>
         item.material_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -144,7 +126,6 @@ const AdminMaterial = () => {
     return (
         <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem' }}>
             <h3 className="mb-4"><i className="bi bi-box-seam me-2"></i> จัดการวัสดุอุปกรณ์</h3>
-
             <Tab.Container defaultActiveKey="stock">
                 <Row>
                     <Col md={3}>
@@ -161,11 +142,8 @@ const AdminMaterial = () => {
                             </Card.Body>
                         </Card>
                     </Col>
-
                     <Col md={9}>
                         <Tab.Content>
-
-                            {/* วัสดุอุปกรณ์ (stock) */}
                             <Tab.Pane eventKey="stock">
                                 <Card className="border-0 shadow-sm">
                                     <Card.Header className="bg-white d-flex justify-content-between align-items-center py-3">
@@ -178,23 +156,13 @@ const AdminMaterial = () => {
                                         <Form.Group className="mb-3">
                                             <div className="input-group">
                                                 <span className="input-group-text bg-white border-end-0"><i className="bi bi-search"></i></span>
-                                                <Form.Control
-                                                    type="text"
-                                                    placeholder="ค้นหารหัสหรือชื่อวัสดุ..."
-                                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                                />
+                                                <Form.Control type="text" placeholder="ค้นหารหัสหรือชื่อวัสดุ..." onChange={(e) => setSearchTerm(e.target.value)} />
                                             </div>
                                         </Form.Group>
-
                                         <Table hover responsive className="align-middle">
                                             <thead className="bg-light">
                                                 <tr>
-                                                    <th>รหัส</th>
-                                                    <th>ชื่อวัสดุ</th>
-                                                    <th>ราคา/หน่วย</th> {/* เพิ่มคอลัมน์ราคา */}
-                                                    <th>คงเหลือ</th>
-                                                    <th>หน่วย</th>
-                                                    <th className="text-center">จัดการ</th>
+                                                    <th>รหัส</th><th>ชื่อวัสดุ</th><th>ราคา/หน่วย</th><th>คงเหลือ</th><th>หน่วย</th><th className="text-center">จัดการ</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -205,22 +173,12 @@ const AdminMaterial = () => {
                                                         <tr key={item.material_id}>
                                                             <td><strong>{item.material_code}</strong></td>
                                                             <td>{item.name}</td>
-                                                            <td className="text-success fw-bold"> {/* แสดงราคา */}
-                                                                ฿{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </td>
-                                                            <td>
-                                                                {item.quantity <= 5 ?
-                                                                    <Badge bg="danger">{item.quantity}</Badge> :
-                                                                    <span>{item.quantity}</span>}
-                                                            </td>
+                                                            <td className="text-success fw-bold">฿{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                            <td>{item.quantity <= 5 ? <Badge bg="danger">{item.quantity}</Badge> : <span>{item.quantity}</span>}</td>
                                                             <td>{item.unit}</td>
                                                             <td className="text-center">
-                                                                <Button variant="outline-warning" size="sm" className="me-1" onClick={() => openEditModal(item)}>
-                                                                    <i className="bi bi-pencil"></i>
-                                                                </Button>
-                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(item.material_id)}>
-                                                                    <i className="bi bi-trash"></i>
-                                                                </Button>
+                                                                <Button variant="outline-warning" size="sm" className="me-1" onClick={() => openEditModal(item)}><i className="bi bi-pencil"></i></Button>
+                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(item.material_id)}><i className="bi bi-trash"></i></Button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -232,8 +190,6 @@ const AdminMaterial = () => {
                                     </Card.Body>
                                 </Card>
                             </Tab.Pane>
-
-                            {/* คำขอเบิกวัสดุ (requests) */}
                             <Tab.Pane eventKey="requests">
                                 <Card className="border-0 shadow-sm">
                                     <Card.Header className="bg-white py-3">
@@ -243,24 +199,13 @@ const AdminMaterial = () => {
                                         <Form.Group className="mb-3">
                                             <div className="input-group">
                                                 <span className="input-group-text bg-white border-end-0"><i className="bi bi-search"></i></span>
-                                                <Form.Control
-                                                    type="text"
-                                                    placeholder="ค้นหาชื่อวัสดุ หรือ ชื่อช่างเบิก..."
-                                                    onChange={(e) => setSearchRequestTerm(e.target.value)}
-                                                />
+                                                <Form.Control type="text" placeholder="ค้นหาชื่อวัสดุ หรือ ชื่อช่างเบิก..." onChange={(e) => setSearchRequestTerm(e.target.value)} />
                                             </div>
                                         </Form.Group>
-
                                         <Table hover responsive className="align-middle">
                                             <thead className="bg-light">
                                                 <tr>
-                                                    <th>รหัสคำขอ</th>
-                                                    <th>ผู้เบิก (ช่าง)</th>
-                                                    <th>ชื่อวัสดุ</th>
-                                                    <th>จำนวนเบิก</th>
-                                                    <th>สถานะ</th>
-                                                    <th className="text-center">การจัดการ</th>
-                                                    <th>วันที่ขอเบิก</th>
+                                                    <th>รหัสคำขอ</th><th>ผู้เบิก (ช่าง)</th><th>ชื่อวัสดุ</th><th>จำนวนเบิก</th><th>สถานะ</th><th className="text-center">การจัดการ</th><th>วันที่ขอเบิก</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -274,30 +219,19 @@ const AdminMaterial = () => {
                                                             <td>{item.material_name || '-'}</td>
                                                             <td>{item.quantity} {item.unit}</td>
                                                             <td>
-                                                                <Badge bg={
-                                                                    item.status === 'อนุมัติ' ? 'success' :
-                                                                        item.status === 'ไม่อนุมัติ' ? 'danger' : 'warning'
-                                                                }>
-                                                                    {item.status}
-                                                                </Badge>
+                                                                <Badge bg={item.status === 'อนุมัติ' ? 'success' : item.status === 'ไม่อนุมัติ' ? 'danger' : 'warning'}>{item.status}</Badge>
                                                             </td>
                                                             <td className="text-center">
                                                                 {item.status === 'รออนุมัติ' ? (
                                                                     <>
-                                                                        <Button variant="outline-success" size="sm" className="me-1" onClick={() => handleUpdateStatus(item.request_id, 'อนุมัติ')}>
-                                                                            <i className="bi bi-check-circle"></i> อนุมัติ
-                                                                        </Button>
-                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleUpdateStatus(item.request_id, 'ไม่อนุมัติ')}>
-                                                                            <i className="bi bi-x-circle"></i> ปฏิเสธ
-                                                                        </Button>
+                                                                        <Button variant="outline-success" size="sm" className="me-1" onClick={() => handleUpdateStatus(item.request_id, 'อนุมัติ')}><i className="bi bi-check-circle"></i> อนุมัติ</Button>
+                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleUpdateStatus(item.request_id, 'ไม่อนุมัติ')}><i className="bi bi-x-circle"></i> ปฏิเสธ</Button>
                                                                     </>
                                                                 ) : (
                                                                     <span className="text-muted">-</span>
                                                                 )}
                                                             </td>
-                                                            <td>
-                                                                {item.request_at ? new Date(item.request_at).toLocaleDateString('th-TH') : '-'}
-                                                            </td>
+                                                            <td>{item.request_at ? new Date(item.request_at).toLocaleDateString('th-TH') : '-'}</td>
                                                         </tr>
                                                     ))
                                                 ) : (
@@ -305,19 +239,13 @@ const AdminMaterial = () => {
                                                 )}
                                             </tbody>
                                         </Table>
-
                                     </Card.Body>
                                 </Card>
                             </Tab.Pane>
-
                         </Tab.Content>
                     </Col>
                 </Row>
             </Tab.Container>
-
-            {/* ========================================== */}
-            {/* 5. Modal สำหรับ เพิ่ม/แก้ไขข้อมูลวัสดุ */}
-            {/* ========================================== */}
             <Modal show={showModal} onHide={handleClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>{isEditing ? 'แก้ไขวัสดุ' : 'เพิ่มวัสดุใหม่'}</Modal.Title>
@@ -328,25 +256,13 @@ const AdminMaterial = () => {
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>รหัสวัสดุ</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="material_code"
-                                        value={formData.material_code}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
+                                    <Form.Control type="text" name="material_code" value={formData.material_code} onChange={handleInputChange} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>ชื่อวัสดุ</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
+                                    <Form.Control type="text" name="name" value={formData.name} onChange={handleInputChange} required />
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -354,41 +270,19 @@ const AdminMaterial = () => {
                             <Col md={4}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>จำนวนคงเหลือ</Form.Label>
-                                    <Form.Control
-                                        type="number"
-                                        name="quantity"
-                                        value={formData.quantity}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
+                                    <Form.Control type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} required />
                                 </Form.Group>
                             </Col>
                             <Col md={4}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>หน่วยนับ</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="unit"
-                                        value={formData.unit}
-                                        onChange={handleInputChange}
-                                        placeholder="เช่น ชิ้น, กล่อง"
-                                        required
-                                    />
+                                    <Form.Control type="text" name="unit" value={formData.unit} onChange={handleInputChange} placeholder="เช่น ชิ้น, กล่อง" required />
                                 </Form.Group>
                             </Col>
                             <Col md={4}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>ราคา/หน่วย (บาท)</Form.Label>
-                                    <Form.Control
-                                        type="number"
-                                        name="price"
-                                        value={formData.price}
-                                        onChange={handleInputChange}
-                                        placeholder="0.00"
-                                        min="0"
-                                        step="0.01"
-                                        required
-                                    />
+                                    <Form.Control type="number" name="price" value={formData.price} onChange={handleInputChange} placeholder="0.00" min="0" step="0.01" required />
                                 </Form.Group>
                             </Col>
                         </Row>
