@@ -84,26 +84,26 @@ const AdminAccount = () => {
   };
   const handleShow = () => setShow(true);
 
-// ในไฟล์ AdminAccount.jsx
-useEffect(() => {
-  if (show && editMode && editingUser) {
-    setTimeout(() => {
-      if (nameRef.current) nameRef.current.value = editingUser.name || '';
-      if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
-      if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
-      if (emailRef.current) emailRef.current.value = editingUser.email || '';
-      
-      // แก้ไขตรงนี้: เปลี่ยนจาก type เป็น type
-      if (typeRef.current) typeRef.current.value = editingUser.type || ''; 
-      
-      if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
-      if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
-      if (editingUser.role) setSelectedRole(editingUser.role);
-    }, 100);
-  } else if (show && !editMode) {
-    setImagePreview(null);
-  }
-}, [show, editMode, editingUser]);
+  // ในไฟล์ AdminAccount.jsx
+  useEffect(() => {
+    if (show && editMode && editingUser) {
+      setTimeout(() => {
+        if (nameRef.current) nameRef.current.value = editingUser.name || '';
+        if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
+        if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
+        if (emailRef.current) emailRef.current.value = editingUser.email || '';
+
+        // แก้ไขตรงนี้: เปลี่ยนจาก type เป็น type
+        if (typeRef.current) typeRef.current.value = editingUser.type || '';
+
+        if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
+        if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
+        if (editingUser.role) setSelectedRole(editingUser.role);
+      }, 100);
+    } else if (show && !editMode) {
+      setImagePreview(null);
+    }
+  }, [show, editMode, editingUser]);
 
   const filteredUsers = useMemo(() => {
     const filtered = users.filter((user) => {
@@ -151,109 +151,76 @@ useEffect(() => {
 
 
   // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
+  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
   const handleSave = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const payload = {
-    name: nameRef.current?.value,
-    nickname: nicknameRef.current?.value,
-    phone: phoneRef.current?.value,
-    email: emailRef.current?.value,
-    role: selectedRole,
-    type: typeRef.current?.value,
-    expertise: expertiseRef.current?.value,
-    salary: incomeRef.current?.value || 0,
-  };
-
-  try {
-    if (editMode) {
-      // แก้ไขข้อมูล (ไม่ต้องยุ่งกับรหัสผ่าน)
-      await axios.put(`${BASE_URL}/users/${editingUser.id}`, payload);
-      alert('แก้ไขข้อมูลสำเร็จ!');
-    } else {
-      // เพิ่มข้อมูลใหม่
-      const registerPayload = {
-        ...payload,
-        username: usernameRef.current?.value,
-        password: 'password123', // <--- ตั้งรหัสผ่านเริ่มต้นตรงนี้ (เช่น password123)
-      };
-
-<<<<<<< Updated upstream
-      if (!registerPayload.username) {
-        return alert("กรุณากรอก Username");
-=======
-  const saveClicked = async () => {
-    const name = nameRef.current.value.trim();
-    const nickname = nicknameRef.current.value.trim();
-    const phone = phoneRef.current.value.trim();
-    const email = emailRef.current.value.trim();
-    const typework = typeWorkRef.current.value;
-    const expertise = expertiseRef.current.value.trim();
-    const income = parseFloat(incomeRef.current.value) || 0;
+    // 1. ดึงค่าจาก Refs และ Validation เบื้องต้น
+    const name = nameRef.current?.value?.trim();
+    const nickname = nicknameRef.current?.value?.trim();
+    const phone = phoneRef.current?.value?.trim();
+    const email = emailRef.current?.value?.trim();
+    const type = typeRef.current?.value; // ใช้ typeRef ให้ตรงกับที่ประกาศไว้ด้านบน
+    const expertise = expertiseRef.current?.value?.trim();
+    const income = parseFloat(incomeRef.current?.value) || 0;
     const role = selectedRole;
+    const username = usernameRef.current?.value?.trim();
 
     if (!name) { alert('กรุณากรอกชื่อช่าง'); return; }
     if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
-    if (!typework) { alert('กรุณาเลือกประเภทงาน'); return; }
+    if (!type) { alert('กรุณาเลือกประเภทงาน'); return; }
 
+    // เตรียมข้อมูลสำหรับส่งไปยัง API
     const userData = {
       name,
       nickname,
       phone,
       email,
-      typework,
+      type,
       expertise,
       role,
       salary: income,
-      // profileImage: imagePreview
     };
 
-    if (editMode && editingUser) {
-      try {
+    try {
+      if (editMode && editingUser) {
+        // --- กรณีแก้ไขข้อมูล (UPDATE) ---
         const currentId = editingUser.id || editingUser.user_id;
 
-        const userRes = await fetch(`${BASE_URL}/users/${currentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        });
+        // อัปเดตข้อมูลผู้ใช้
+        await axios.put(`${BASE_URL}/users/${currentId}`, userData);
 
-        if (!userRes.ok) throw new Error('ไม่สามารถบันทึกข้อมูลส่วนตัวได้');
-
-        const salaryRes = await fetch(`http://192.168.1.106:3000/salary/${currentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ salary: income }),
-        });
-
-        if (!salaryRes.ok) console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน');
-
-        setUsers(users.map(user =>
-          (user.id === currentId || user.user_id === currentId)
-            ? { ...user, ...userData, income }
-            : user
-        ));
+        // อัปเดตเงินเดือน (ถ้า API แยกกันตามที่คุณเขียนไว้)
+        try {
+          await axios.put(`http://192.168.1.106:3000/salary/${currentId}`, { salary: income });
+        } catch (salErr) {
+          console.error('Salary update failed:', salErr);
+        }
 
         alert('อัปเดตข้อมูลสำเร็จ!');
+      } else {
+        // --- กรณีเพิ่มข้อมูลใหม่ (REGISTER) ---
+        if (!username) { alert('กรุณากรอก Username'); return; }
 
-      } catch (err) {
-        console.error('Update error:', err);
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
-        return;
->>>>>>> Stashed changes
+        const registerPayload = {
+          ...userData,
+          username,
+          password: 'password123', // รหัสผ่านเริ่มต้น
+        };
+
+        await axios.post(`${BASE_URL}/users/register`, registerPayload);
+        alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
       }
 
-      await axios.post(`${BASE_URL}/users/register`, registerPayload);
-      alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
+      // ปิด Modal และดึงข้อมูลใหม่
+      handleClose();
+      fetchTechnicians(); // เรียกฟังก์ชันเดิมเพื่ออัปเดตตารางโดยไม่ต้อง Reload หน้าเว็บ
+
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
     }
-    
-    setShow(false);
-    window.location.reload();
-  } catch (error) {
-    console.error("Error saving data:", error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
-  }
-};
+  };
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
