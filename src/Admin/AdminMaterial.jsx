@@ -1,12 +1,10 @@
-import { Form, Button, Card, Row, Col, Nav, Tab, Table, Badge, Modal } from 'react-bootstrap';
+import { Form, Button, Card, Table, Badge, Modal, Row, Col } from 'react-bootstrap';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AdminMaterial = () => {
     const [materials, setMaterials] = useState([]);
-    const [requests, setRequests] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchRequestTerm, setSearchRequestTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
     const [showModal, setShowModal] = useState(false);
@@ -31,39 +29,27 @@ const AdminMaterial = () => {
 
     const fetchMaterials = async () => {
         try {
-            const response = await axios.get('http://192.168.1.106:3000/api/materials');
+            setLoading(true);
+            const response = await axios.get('http://192.168.1.93:3000/api/materials');
             setMaterials(response.data);
         } catch (error) {
             console.error("ดึงข้อมูลวัสดุไม่สำเร็จ:", error);
+        } finally {
+            setLoading(false);
         }
-    };
-
-    const fetchRequests = async () => {
-        try {
-            const response = await axios.get('http://192.168.1.106:3000/api/materials/requests');
-            setRequests(response.data);
-        } catch (error) {
-            console.error("ดึงข้อมูลคำขอเบิกไม่สำเร็จ:", error);
-        }
-    };
-
-    const loadAllData = async () => {
-        setLoading(true);
-        await Promise.all([fetchMaterials(), fetchRequests()]);
-        setLoading(false);
     };
 
     useEffect(() => {
-        loadAllData();
+        fetchMaterials();
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put(`http://192.168.1.106:3000/api/materials/${formData.material_id}`, formData);
+                await axios.put(`http://192.168.1.93:3000/api/materials/${formData.material_id}`, formData);
             } else {
-                await axios.post('http://192.168.1.106:3000/api/materials/add', formData);
+                await axios.post('http://192.168.1.93:3000/api/materials/add', formData);
             }
             fetchMaterials();
             handleClose();
@@ -75,6 +61,7 @@ const AdminMaterial = () => {
 
     const openAddModal = () => {
         setIsEditing(false);
+        setFormData({ material_code: '', name: '', quantity: '', unit: '', price: '' });
         setShowModal(true);
     };
 
@@ -87,28 +74,11 @@ const AdminMaterial = () => {
     const handleDelete = async (id) => {
         if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบวัสดุนี้?")) {
             try {
-                await axios.delete(`http://192.168.1.106:3000/api/materials/${id}`);
+                await axios.delete(`http://192.168.1.93:3000/api/materials/${id}`);
                 fetchMaterials();
             } catch (error) {
                 console.error("ลบข้อมูลไม่สำเร็จ:", error);
                 alert("เกิดข้อผิดพลาดในการลบข้อมูล");
-            }
-        }
-    };
-
-    const handleUpdateStatus = async (requestId, status) => {
-        if (window.confirm(`ต้องการ "${status}" คำขอนี้ใช่หรือไม่?`)) {
-            try {
-                await axios.patch(`http://192.168.1.106:3000/api/materials/request/${requestId}/approve`, {
-                    status: status,
-                    admin_id: 1
-                });
-                fetchRequests();
-                fetchMaterials();
-            } catch (error) {
-                console.error("อัปเดตสถานะไม่สำเร็จ:", error);
-                const errorMessage = error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตสถานะ";
-                alert(errorMessage);
             }
         }
     };
@@ -118,134 +88,118 @@ const AdminMaterial = () => {
         item.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredRequests = requests.filter(item =>
-        item.material_name?.toLowerCase().includes(searchRequestTerm.toLowerCase()) ||
-        item.tech_name?.toLowerCase().includes(searchRequestTerm.toLowerCase())
-    );
+    const lowStockCount = materials.filter(m => m.quantity <= 5).length;
 
     return (
         <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem' }}>
-            <h3 className="mb-4"><i className="bi bi-box-seam me-2"></i> จัดการวัสดุอุปกรณ์</h3>
-            <Tab.Container defaultActiveKey="stock">
-                <Row>
-                    <Col md={3}>
-                        <Card className="mb-3 border-0 shadow-sm">
-                            <Card.Body className="p-0">
-                                <Nav variant="pills" className="flex-column">
-                                    <Nav.Item>
-                                        <Nav.Link eventKey="stock" className="p-3"><i className="bi bi-archive me-2"></i> คลังวัสดุ</Nav.Link>
-                                    </Nav.Item>
-                                    <Nav.Item>
-                                        <Nav.Link eventKey="requests" className="p-3"><i className="bi bi-clipboard-check me-2"></i> รายการเบิกวัสดุ</Nav.Link>
-                                    </Nav.Item>
-                                </Nav>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col md={9}>
-                        <Tab.Content>
-                            <Tab.Pane eventKey="stock">
-                                <Card className="border-0 shadow-sm">
-                                    <Card.Header className="bg-white d-flex justify-content-between align-items-center py-3">
-                                        <h5 className="mb-0">รายการวัสดุทั้งหมด</h5>
-                                        <Button variant="primary" size="sm" onClick={openAddModal}>
-                                            <i className="bi bi-plus-lg me-1"></i> เพิ่มวัสดุใหม่
-                                        </Button>
-                                    </Card.Header>
-                                    <Card.Body>
-                                        <Form.Group className="mb-3">
-                                            <div className="input-group">
-                                                <span className="input-group-text bg-white border-end-0"><i className="bi bi-search"></i></span>
-                                                <Form.Control type="text" placeholder="ค้นหารหัสหรือชื่อวัสดุ..." onChange={(e) => setSearchTerm(e.target.value)} />
-                                            </div>
-                                        </Form.Group>
-                                        <Table hover responsive className="align-middle">
-                                            <thead className="bg-light">
-                                                <tr>
-                                                    <th>รหัส</th><th>ชื่อวัสดุ</th><th>ราคา/หน่วย</th><th>คงเหลือ</th><th>หน่วย</th><th className="text-center">จัดการ</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (
-                                                    <tr><td colSpan="6" className="text-center">กำลังโหลดข้อมูล...</td></tr>
-                                                ) : filteredMaterials.length > 0 ? (
-                                                    filteredMaterials.map(item => (
-                                                        <tr key={item.material_id}>
-                                                            <td><strong>{item.material_code}</strong></td>
-                                                            <td>{item.name}</td>
-                                                            <td className="text-success fw-bold">฿{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                            <td>{item.quantity <= 5 ? <Badge bg="danger">{item.quantity}</Badge> : <span>{item.quantity}</span>}</td>
-                                                            <td>{item.unit}</td>
-                                                            <td className="text-center">
-                                                                <Button variant="outline-warning" size="sm" className="me-1" onClick={() => openEditModal(item)}><i className="bi bi-pencil"></i></Button>
-                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDelete(item.material_id)}><i className="bi bi-trash"></i></Button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr><td colSpan="6" className="text-center">ไม่พบข้อมูลวัสดุ</td></tr>
-                                                )}
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Tab.Pane>
-                            <Tab.Pane eventKey="requests">
-                                <Card className="border-0 shadow-sm">
-                                    <Card.Header className="bg-white py-3">
-                                        <h5 className="mb-0">รายการคำขอเบิกวัสดุ</h5>
-                                    </Card.Header>
-                                    <Card.Body>
-                                        <Form.Group className="mb-3">
-                                            <div className="input-group">
-                                                <span className="input-group-text bg-white border-end-0"><i className="bi bi-search"></i></span>
-                                                <Form.Control type="text" placeholder="ค้นหาชื่อวัสดุ หรือ ชื่อช่างเบิก..." onChange={(e) => setSearchRequestTerm(e.target.value)} />
-                                            </div>
-                                        </Form.Group>
-                                        <Table hover responsive className="align-middle">
-                                            <thead className="bg-light">
-                                                <tr>
-                                                    <th>รหัสคำขอ</th><th>ผู้เบิก (ช่าง)</th><th>ชื่อวัสดุ</th><th>จำนวนเบิก</th><th>สถานะ</th><th className="text-center">การจัดการ</th><th>วันที่ขอเบิก</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {loading ? (
-                                                    <tr><td colSpan="7" className="text-center">กำลังโหลดข้อมูล...</td></tr>
-                                                ) : filteredRequests.length > 0 ? (
-                                                    filteredRequests.map(item => (
-                                                        <tr key={item.request_id}>
-                                                            <td><strong>REQ-{item.request_id}</strong></td>
-                                                            <td>{item.tech_name || '-'}</td>
-                                                            <td>{item.material_name || '-'}</td>
-                                                            <td>{item.quantity} {item.unit}</td>
-                                                            <td>
-                                                                <Badge bg={item.status === 'อนุมัติ' ? 'success' : item.status === 'ไม่อนุมัติ' ? 'danger' : 'warning'}>{item.status}</Badge>
-                                                            </td>
-                                                            <td className="text-center">
-                                                                {item.status === 'รออนุมัติ' ? (
-                                                                    <>
-                                                                        <Button variant="outline-success" size="sm" className="me-1" onClick={() => handleUpdateStatus(item.request_id, 'อนุมัติ')}><i className="bi bi-check-circle"></i> อนุมัติ</Button>
-                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleUpdateStatus(item.request_id, 'ไม่อนุมัติ')}><i className="bi bi-x-circle"></i> ปฏิเสธ</Button>
-                                                                    </>
-                                                                ) : (
-                                                                    <span className="text-muted">-</span>
-                                                                )}
-                                                            </td>
-                                                            <td>{item.request_at ? new Date(item.request_at).toLocaleDateString('th-TH') : '-'}</td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr><td colSpan="7" className="text-center">ไม่พบข้อมูลคำขอเบิกวัสดุ</td></tr>
-                                                )}
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Tab.Pane>
-                        </Tab.Content>
-                    </Col>
-                </Row>
-            </Tab.Container>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3 className="mb-0"><i className="bi bi-box-seam me-2"></i>จัดการวัสดุอุปกรณ์</h3>
+                <Button variant="primary" onClick={openAddModal}>
+                    <i className="bi bi-plus-circle me-2"></i>เพิ่มวัสดุ
+                </Button>
+            </div>
+
+            {/* Summary Cards */}
+            <Row className="mb-4">
+                <Col md={4}>
+                    <Card className="border-0 shadow-sm text-center py-3">
+                        <div className="fs-2 fw-bold text-primary">{materials.length}</div>
+                        <div className="text-muted small">วัสดุทั้งหมด (รายการ)</div>
+                    </Card>
+                </Col>
+                <Col md={4}>
+                    <Card className="border-0 shadow-sm text-center py-3">
+                        <div className="fs-2 fw-bold text-success">
+                            {materials.filter(m => m.quantity > 5).length}
+                        </div>
+                        <div className="text-muted small">วัสดุพร้อมใช้งาน</div>
+                    </Card>
+                </Col>
+                <Col md={4}>
+                    <Card className={`border-0 shadow-sm text-center py-3 ${lowStockCount > 0 ? 'border-danger border' : ''}`}>
+                        <div className={`fs-2 fw-bold ${lowStockCount > 0 ? 'text-danger' : 'text-muted'}`}>
+                            {lowStockCount}
+                        </div>
+                        <div className="text-muted small">วัสดุใกล้หมด (≤5 ชิ้น)</div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Stock Table */}
+            <Card className="border-0 shadow-sm">
+                <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 className="mb-0"><i className="bi bi-archive me-2"></i>คลังวัสดุ</h5>
+                    <div style={{ width: '300px' }}>
+                        <div className="input-group">
+                            <span className="input-group-text bg-white border-end-0">
+                                <i className="bi bi-search"></i>
+                            </span>
+                            <Form.Control
+                                type="text"
+                                placeholder="ค้นหารหัส หรือชื่อวัสดุ..."
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="border-start-0"
+                            />
+                        </div>
+                    </div>
+                </Card.Header>
+                <Card.Body className="p-0">
+                    <Table hover responsive className="align-middle mb-0">
+                        <thead className="bg-light">
+                            <tr>
+                                <th className="ps-3">รหัส</th>
+                                <th>ชื่อวัสดุ</th>
+                                <th>ราคา/หน่วย</th>
+                                <th>คงเหลือ</th>
+                                <th>หน่วย</th>
+                                <th>สถานะ</th>
+                                <th className="text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan="7" className="text-center py-4">
+                                    <div className="spinner-border spinner-border-sm me-2"></div>กำลังโหลดข้อมูล...
+                                </td></tr>
+                            ) : filteredMaterials.length > 0 ? (
+                                filteredMaterials.map(item => (
+                                    <tr key={item.material_id}>
+                                        <td className="ps-3"><strong>{item.material_code}</strong></td>
+                                        <td>{item.name}</td>
+                                        <td className="text-success fw-bold">
+                                            ฿{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="fw-semibold">{item.quantity}</td>
+                                        <td>{item.unit}</td>
+                                        <td>
+                                            {item.quantity === 0
+                                                ? <Badge bg="danger">หมดแล้ว</Badge>
+                                                : item.quantity <= 5
+                                                ? <Badge bg="warning" text="dark">ใกล้หมด</Badge>
+                                                : <Badge bg="success">ปกติ</Badge>
+                                            }
+                                        </td>
+                                        <td className="text-center">
+                                            <Button variant="outline-warning" size="sm" className="me-1" onClick={() => openEditModal(item)}>
+                                                <i className="bi bi-pencil"></i>
+                                            </Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => handleDelete(item.material_id)}>
+                                                <i className="bi bi-trash"></i>
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan="7" className="text-center py-4 text-muted">
+                                    <i className="bi bi-inbox me-2"></i>ไม่พบข้อมูลวัสดุ
+                                </td></tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
+
+            {/* Add/Edit Modal */}
             <Modal show={showModal} onHide={handleClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>{isEditing ? 'แก้ไขวัสดุ' : 'เพิ่มวัสดุใหม่'}</Modal.Title>

@@ -2,7 +2,7 @@ import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } fro
 import { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.1.106:3000/api';
+const BASE_URL = 'http://192.168.1.93:3000/api';
 
 const AdminAccount = () => {
   const [users, setUsers] = useState([]);
@@ -82,7 +82,10 @@ const AdminAccount = () => {
     setImagePreview(null);
     setSelectedRole('technician');
   };
+  
   const handleShow = () => setShow(true);
+
+  
 
   // ในไฟล์ AdminAccount.jsx
   useEffect(() => {
@@ -92,10 +95,7 @@ const AdminAccount = () => {
         if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
         if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
         if (emailRef.current) emailRef.current.value = editingUser.email || '';
-
-        // แก้ไขตรงนี้: เปลี่ยนจาก type เป็น type
-        if (typeRef.current) typeRef.current.value = editingUser.type || '';
-
+        if (typeRef.current) typeRef.current.value = editingUser.type || ''; 
         if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
         if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
         if (editingUser.role) setSelectedRole(editingUser.role);
@@ -149,62 +149,56 @@ const AdminAccount = () => {
     }
   };
 
-
-  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
-  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
+  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข) ที่ได้รับการแก้ไขแล้ว
   const handleSave = async (e) => {
     e.preventDefault();
 
-    // 1. ดึงค่าจาก Refs และ Validation เบื้องต้น
     const name = nameRef.current?.value?.trim();
     const nickname = nicknameRef.current?.value?.trim();
     const phone = phoneRef.current?.value?.trim();
     const email = emailRef.current?.value?.trim();
-    const type = typeRef.current?.value; // ใช้ typeRef ให้ตรงกับที่ประกาศไว้ด้านบน
+    const typework = typeRef.current?.value; // แก้จาก typeWorkRef เป็น typeRef
     const expertise = expertiseRef.current?.value?.trim();
     const income = parseFloat(incomeRef.current?.value) || 0;
-    const role = selectedRole;
     const username = usernameRef.current?.value?.trim();
 
-    if (!name) { alert('กรุณากรอกชื่อช่าง'); return; }
+    if (!name) { alert('กรุณากรอกชื่อ-นามสกุล'); return; }
     if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
     if (!type) { alert('กรุณาเลือกประเภทงาน'); return; }
 
-    // เตรียมข้อมูลสำหรับส่งไปยัง API
-    const userData = {
+    const payload = {
       name,
       nickname,
       phone,
       email,
-      type,
+      role: selectedRole,
+      type: typework,
       expertise,
-      role,
       salary: income,
     };
 
     try {
       if (editMode && editingUser) {
-        // --- กรณีแก้ไขข้อมูล (UPDATE) ---
         const currentId = editingUser.id || editingUser.user_id;
 
-        // อัปเดตข้อมูลผู้ใช้
-        await axios.put(`${BASE_URL}/users/${currentId}`, userData);
+        // แก้ไขข้อมูลส่วนตัว
+        await axios.put(`${BASE_URL}/users/${currentId}`, payload);
 
-        // อัปเดตเงินเดือน (ถ้า API แยกกันตามที่คุณเขียนไว้)
+        // แยกอัปเดตเงินเดือน
         try {
-          await axios.put(`http://192.168.1.106:3000/salary/${currentId}`, { salary: income });
-        } catch (salErr) {
-          console.error('Salary update failed:', salErr);
+          await axios.put(`http://192.168.1.93:3000/salary/${currentId}`, { salary: income });
+        } catch (salaryErr) {
+          console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน:', salaryErr);
         }
-
-        alert('อัปเดตข้อมูลสำเร็จ!');
+        
+        alert('แก้ไขข้อมูลสำเร็จ!');
       } else {
-        // --- กรณีเพิ่มข้อมูลใหม่ (REGISTER) ---
-        if (!username) { alert('กรุณากรอก Username'); return; }
+        // เพิ่มช่างใหม่
+        if (!username) { alert('กรุณาตั้ง Username ให้ช่างใหม่'); return; }
 
         const registerPayload = {
-          ...userData,
-          username,
+          ...payload,
+          username: username,
           password: 'password123', // รหัสผ่านเริ่มต้น
         };
 
@@ -212,10 +206,8 @@ const AdminAccount = () => {
         alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
       }
 
-      // ปิด Modal และดึงข้อมูลใหม่
-      handleClose();
-      fetchTechnicians(); // เรียกฟังก์ชันเดิมเพื่ออัปเดตตารางโดยไม่ต้อง Reload หน้าเว็บ
-
+      setShow(false);
+      window.location.reload();
     } catch (error) {
       console.error("Error saving data:", error);
       alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
@@ -354,17 +346,16 @@ const AdminAccount = () => {
                     <option value="supervisor">👑 หัวหน้าช่าง (Supervisor)</option>
                   </Form.Select>
                 </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Username
-                    <span
-                      className="text-danger">*
-                    </span></Form.Label>
-                  <Form.Control
-                    ref={usernameRef}
-                    placeholder="ตั้งชื่อผู้ใช้ให้ช่าง"
-                    required
-                  />
-                </Form.Group>
+                {!editMode && (
+                  <Form.Group className="mt-3">
+                    <Form.Label>Username <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      ref={usernameRef}
+                      placeholder="ตั้งชื่อผู้ใช้ให้ช่าง"
+                      required
+                    />
+                  </Form.Group>
+                )}
               </Col>
             </Row>
           </Form>
@@ -481,13 +472,6 @@ const AdminAccount = () => {
                           <td><Badge bg="secondary">{user.id}</Badge></td>
                           <td className="text-start ps-4 fw-semibold">
                             <div className="d-flex align-items-center gap-2">
-                              {/* {user.profileImage ? (
-                                <img src={user.profileImage} alt="" className="rounded-circle border" style={{ width: '32px', height: '32px', objectFit: 'cover' }} />
-                              ) : (
-                                <div className="rounded-circle bg-light border d-flex align-items-center justify-content-center text-secondary" style={{ width: '32px', height: '32px' }}>
-                                  <i className="bi bi-person-fill"></i>
-                                </div>
-                              )} */}
                               <div>{user.name}</div>
                             </div>
                           </td>

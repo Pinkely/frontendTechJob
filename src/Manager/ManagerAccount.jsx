@@ -14,7 +14,7 @@ const ManagerAccount = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await axios.get('http://192.168.1.106:3000/api/manager/employees');
+                const res = await axios.get('http://192.168.1.93:3000/api/manager/employees');
                 setEmployees(res.data?.employees || []);
                 setAllWorkHistory(res.data?.workHistory || []);
                 setLoading(false);
