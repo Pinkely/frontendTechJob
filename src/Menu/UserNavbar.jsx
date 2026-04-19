@@ -19,7 +19,7 @@ const UserNavbar = ({ onLogout }) => {
 
             if (userId) {
                 try {
-                    const response = await axios.get(`http://192.168.1.106:3000/users/${userId}`);
+                    const response = await axios.get(`http://192.168.1.93:3000/users/${userId}`);
 
                     if (response.data && response.data.user) {
                         setUserProfile(response.data.user); // เก็บข้อมูลที่ได้ลง State

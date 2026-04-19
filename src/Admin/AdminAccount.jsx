@@ -178,8 +178,69 @@ useEffect(() => {
         password: 'password123', // <--- ตั้งรหัสผ่านเริ่มต้นตรงนี้ (เช่น password123)
       };
 
+<<<<<<< Updated upstream
       if (!registerPayload.username) {
         return alert("กรุณากรอก Username");
+=======
+  const saveClicked = async () => {
+    const name = nameRef.current.value.trim();
+    const nickname = nicknameRef.current.value.trim();
+    const phone = phoneRef.current.value.trim();
+    const email = emailRef.current.value.trim();
+    const typework = typeWorkRef.current.value;
+    const expertise = expertiseRef.current.value.trim();
+    const income = parseFloat(incomeRef.current.value) || 0;
+    const role = selectedRole;
+
+    if (!name) { alert('กรุณากรอกชื่อช่าง'); return; }
+    if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
+    if (!typework) { alert('กรุณาเลือกประเภทงาน'); return; }
+
+    const userData = {
+      name,
+      nickname,
+      phone,
+      email,
+      typework,
+      expertise,
+      role,
+      salary: income,
+      // profileImage: imagePreview
+    };
+
+    if (editMode && editingUser) {
+      try {
+        const currentId = editingUser.id || editingUser.user_id;
+
+        const userRes = await fetch(`${BASE_URL}/users/${currentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+
+        if (!userRes.ok) throw new Error('ไม่สามารถบันทึกข้อมูลส่วนตัวได้');
+
+        const salaryRes = await fetch(`http://192.168.1.93:3000/salary/${currentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salary: income }),
+        });
+
+        if (!salaryRes.ok) console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน');
+
+        setUsers(users.map(user =>
+          (user.id === currentId || user.user_id === currentId)
+            ? { ...user, ...userData, income }
+            : user
+        ));
+
+        alert('อัปเดตข้อมูลสำเร็จ!');
+
+      } catch (err) {
+        console.error('Update error:', err);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        return;
+>>>>>>> Stashed changes
       }
 
       await axios.post(`${BASE_URL}/users/register`, registerPayload);

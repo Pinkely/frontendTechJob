@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button, Form, Dropdown, Table, Badge, InputGroup } from 'react-bootstrap';
 import Modal from 'react-bootstrap/Modal';
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 const API_URL = 'http://192.168.1.93:3000/api';
 
 const AdminWork = () => {
