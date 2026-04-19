@@ -164,7 +164,7 @@ const AdminAccount = () => {
 
     if (!name) { alert('กรุณากรอกชื่อ-นามสกุล'); return; }
     if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
-    if (!typework) { alert('กรุณาเลือกประเภทงาน'); return; }
+    if (!type) { alert('กรุณาเลือกประเภทงาน'); return; }
 
     const payload = {
       name,

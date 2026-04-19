@@ -1,102 +1,133 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { LayoutDashboard, Users, BarChart2, LogOut, Briefcase } from 'lucide-react'
 
 const ManagerNavbar = ({ onLogout }) => {
     const location = useLocation()
     const navigate = useNavigate()
     const [activeMenu, setActiveMenu] = useState(location.pathname)
 
-    // ติดตามการเปลี่ยนแปลงของ URL และอัพเดท activeMenu
-    useEffect(() => {
-        setActiveMenu(location.pathname)
-    }, [location.pathname])
+    useEffect(() => { setActiveMenu(location.pathname) }, [location.pathname])
 
-    // ฟังก์ชันจัดการการ Logout
-    // วิธีการทำงาน:
-    // 1. เรียก onLogout() จาก props (ถ้ามี) เพื่อรีเซ็ต state ใน App.jsx
-    // 2. ใช้ navigate('/login') เพื่อนำผู้ใช้กลับไปหน้า Login
     const handleLogout = () => {
-        // ถ้ามี onLogout function ส่งมาจาก parent component (App.jsx)
-        if (onLogout) {
-            onLogout() // เรียกใช้ฟังก์ชัน logout จาก App.jsx
-        }
-
-        // นำทางไปหน้า login (ใช้ navigate แทน Link เพราะเราต้องทำงานก่อน redirect)
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        if (onLogout) onLogout()
         navigate('/login')
     }
 
+    const menus = [
+        { to: '/manager/dashboard', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
+        { to: '/manager/users',     icon: <Users            size={17} />, label: 'Users' },
+        { to: '/manager/reports',   icon: <BarChart2        size={17} />, label: 'Reports' },
+    ]
+
     return (
-        <div className="border-1 bg-primary" style={{
-            width: '14rem',
-            position: 'fixed',
-            height: '100vh',
-            top: 0,
-            left: 0
-        }}>
-            {/* ปุ่ม Logout */}
-            {/* เปลี่ยนจาก Link เป็น div เพราะเราต้องเรียก handleLogout ก่อน */}
-            <div
-                onClick={handleLogout}
-                style={{ cursor: 'pointer' }} // เพิ่ม cursor pointer เพื่อให้รู้ว่ากดได้
-            >
-                <div className="d-flex align-items-center justify-content-between border-1 m-3 border-light px-2 py-2 btn btn-outline-danger" style={{ borderRadius: '30px' }}>
-                    <div>
-                        <span className='text-light ml-4'>Logout</span>
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+                .mnav-wrap {
+                    position: fixed; top: 0; left: 0;
+                    width: 15rem; height: 100vh; z-index: 1030;
+                    font-family: 'Kanit', sans-serif;
+                    display: flex; flex-direction: column;
+                    background: linear-gradient(180deg,#e0f0ff 0%,#f0f8ff 60%,#dbeefe 100%);
+                    border-right: 1px solid rgba(147,197,253,0.4);
+                    box-shadow: 4px 0 24px rgba(59,130,246,0.08);
+                }
+                .mnav-wrap::before {
+                    content: ''; position: absolute; inset: 0;
+                    background-image: radial-gradient(circle,#93c5fd18 1px,transparent 1px);
+                    background-size: 24px 24px; pointer-events: none;
+                }
+
+                .mnav-header {
+                    padding: 28px 20px 20px;
+                    border-bottom: 1px solid rgba(147,197,253,0.35);
+                    display: flex; flex-direction: column; align-items: center; gap: 6px;
+                }
+                .mnav-logo-wrap {
+                    width: 60px; height: 60px; border-radius: 16px;
+                    background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+                    display: flex; align-items: center; justify-content: center;
+                    box-shadow: 0 6px 18px rgba(59,130,246,0.3); margin-bottom: 4px;
+                }
+                .mnav-title { font-size: 16px; font-weight: 700; color: #1e3a8a; }
+                .mnav-sub   { font-size: 11px; color: #64748b; }
+                .mnav-logout-btn {
+                    margin-top: 10px;
+                    display: flex; align-items: center; justify-content: center; gap: 6px;
+                    width: 100%; padding: 7px 0; border-radius: 10px;
+                    border: 1.5px solid rgba(239,68,68,0.4);
+                    background: rgba(254,242,242,0.7); color: #dc2626;
+                    font-family: 'Kanit', sans-serif; font-size: 13px; font-weight: 500;
+                    cursor: pointer; transition: all 0.2s;
+                }
+                .mnav-logout-btn:hover { background: #fee2e2; border-color: #ef4444; }
+
+                .mnav-menu { flex: 1; padding: 18px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+                .mnav-section-label {
+                    font-size: 10px; font-weight: 700; color: #94a3b8;
+                    letter-spacing: 1.2px; text-transform: uppercase;
+                    padding: 0 6px; margin-bottom: 6px;
+                }
+                .mnav-menu-btn {
+                    display: flex; align-items: center; gap: 10px;
+                    padding: 10px 14px; border-radius: 13px;
+                    border: none; width: 100%; text-align: left;
+                    font-family: 'Kanit', sans-serif; font-size: 14px; font-weight: 500;
+                    cursor: pointer; transition: all 0.18s; text-decoration: none;
+                    color: #475569; background: transparent;
+                }
+                .mnav-menu-btn:hover { background: rgba(255,255,255,0.65); color: #1e40af; transform: translateX(2px); }
+                .mnav-menu-btn.active {
+                    background: rgba(255,255,255,0.82); backdrop-filter: blur(10px);
+                    color: #1d4ed8; font-weight: 700;
+                    border: 1px solid rgba(147,197,253,0.5);
+                    box-shadow: 0 4px 14px rgba(59,130,246,0.1);
+                }
+                .mnav-menu-btn.active .mnav-icon { background: linear-gradient(135deg,#3b82f6,#1d4ed8); color: #fff; box-shadow: 0 3px 10px rgba(59,130,246,0.3); }
+                .mnav-icon {
+                    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+                    display: flex; align-items: center; justify-content: center;
+                    background: rgba(219,234,254,0.6); color: #3b82f6; transition: all 0.18s;
+                }
+
+                .mnav-footer {
+                    padding: 14px 20px;
+                    border-top: 1px solid rgba(147,197,253,0.3);
+                    text-align: center; font-size: 12px; font-weight: 700;
+                    color: #3b82f6; letter-spacing: 1px;
+                }
+                .mnav-footer span { color: #1e293b; }
+            `}</style>
+
+            <div className="mnav-wrap">
+                <div className="mnav-header">
+                    <div className="mnav-logo-wrap">
+                        <Briefcase size={28} color="#fff" />
                     </div>
-                    <div>
-                        <button type="button">
-                            <i className="bi bi-box-arrow-right text-light"></i>
-                        </button>
-                    </div>
+                    <div className="mnav-title">ผู้จัดการ</div>
+                    <div className="mnav-sub">Manager Panel</div>
+                    <button className="mnav-logout-btn" onClick={handleLogout}>
+                        <LogOut size={14} /> Logout
+                    </button>
                 </div>
+
+                <div className="mnav-menu">
+                    <div className="mnav-section-label">Main Menu</div>
+                    {menus.map(m => (
+                        <Link key={m.to} to={m.to} className={`mnav-menu-btn ${activeMenu === m.to ? 'active' : ''}`}>
+                            <div className="mnav-icon">{m.icon}</div>
+                            {m.label}
+                        </Link>
+                    ))}
+                </div>
+
+                <div className="mnav-footer">TECH <span>JOB</span></div>
             </div>
-
-            <p className='mt-2 text-light mx-4'>Main Menu</p>
-
-            {/* เมนู Dashboard */}
-            <Link to="/manager">
-                <button
-                    className={`btn mb-2 w-100 text-start ${activeMenu === '/manager' ? 'btn-light' : 'text-light'}`}
-                    onClick={() => setActiveMenu('/manager')}
-                >
-                    <i className="bi bi-bar-chart-fill mx-3"></i>
-                    DashBoard
-                </button>
-            </Link>
-
-            {/* เมนู ประวัติงาน */}
-            <Link to="/manager-record">
-                <button
-                    className={`btn mb-2 w-100 text-start ${activeMenu === '/manager-record' ? 'btn-light' : 'text-light'}`}
-                    onClick={() => setActiveMenu('/manager-record')}
-                >
-                    <i className="bi bi-file-text-fill mx-3"></i>
-                    ประวัติการทำงาน
-                </button>
-            </Link>
-
-            {/* เมนู จัดการบัญชี */}
-            <Link to="/manager-account">
-                <button
-                    className={`btn mb-2 w-100 text-start ${activeMenu === '/manager-account' ? 'btn-light' : 'text-light'}`}
-                    onClick={() => setActiveMenu('/manager-account')}
-                >
-                    <i className="bi bi-person mx-3"></i>
-                    จัดการบัญชีช่าง
-                </button>
-            </Link>
-
-            {/* เมนู Setting (อยู่ด้านล่าง) */}
-            <Link to="/manager-setting" >  
-                <button
-                    className={`btn ${activeMenu === '/manager-setting' ? 'btn-light' : 'text-light'}`}
-                    style={{ position: 'absolute', bottom: '0.2rem', left: '0.3rem' }}
-                    onClick={() => setActiveMenu('/manager-setting')}
-                >
-                    <i className="bi bi-gear"></i>
-                </button>
-            </Link>
-        </div>
+        </>
     )
 }
 
