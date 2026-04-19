@@ -54,20 +54,63 @@ export default function LeaderReport() {
             .finally(() => setLoading(false));
     }, [supervisorId]);
 
-    const handleSend = () => {
+    useEffect(() => {
+        if (!supervisorId) return;
+
+        fetch(`http://localhost:3000/works/reports/supervisor/${supervisorId}`)
+            .then(res => res.json())
+            .then(data => {
+                const mapped = data.map(r => ({
+                    jobId: r.work_id,
+                    title: r.job_name || "ไม่ระบุงาน",
+                    location: r.location || "-",
+                    detail: r.work_note,
+                    note: r.leader_comment,
+                    date: new Date(r.submitted_at).toLocaleString("th-TH"),
+                }));
+                setReports(mapped);
+            })
+            .catch(err => console.error("❌ Error fetching reports:", err));
+    }, [supervisorId]);
+
+    const handleSend = async () => {
         if (!detail) return alert("กรุณากรอกรายละเอียดงาน");
-        const newReport = {
-            jobId: selectedJob.id,
-            title: selectedJob.namework,
-            location: selectedJob.role,
-            detail,
-            note,
-            date: new Date().toLocaleString("th-TH"),
+
+        const reportData = {
+            work_id: selectedJob.id,
+            technician_id: null, // สามารถปรับปรุงเพิ่มได้หากมีการเลือกช่าง
+            work_note: detail,
+            leader_comment: note
         };
-        setReports([newReport, ...reports]);
-        setSelectedJob(null);
-        setDetail("");
-        setNote("");
+
+        try {
+            const response = await fetch(`http://localhost:3000/works/report`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(reportData),
+            });
+
+            if (response.ok) {
+                const newReport = {
+                    jobId: selectedJob.id,
+                    title: selectedJob.namework,
+                    location: selectedJob.role,
+                    detail,
+                    note,
+                    date: new Date().toLocaleString("th-TH"),
+                };
+                setReports([newReport, ...reports]);
+                setSelectedJob(null);
+                setDetail("");
+                setNote("");
+                alert("ส่งรายงานสำเร็จและบันทึกลงฐานข้อมูลแล้ว");
+            } else {
+                alert("ส่งรายงานไม่สำเร็จ");
+            }
+        } catch (error) {
+            console.error("❌ Error sending report:", error);
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        }
     };
 
     return (
