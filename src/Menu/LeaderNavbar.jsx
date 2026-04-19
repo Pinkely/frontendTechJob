@@ -9,6 +9,33 @@ const LeaderNavbar = ({ onLogout }) => {
 
     useEffect(() => { setActiveMenu(location.pathname) }, [location.pathname])
 
+    const loadUserData = () => {
+        try {
+            const storedUser = localStorage.getItem('user')
+            if (storedUser) {
+                setUser(JSON.parse(storedUser))
+            } else {
+                const sessionData = localStorage.getItem('session')
+                if (sessionData) {
+                    const parsedSession = JSON.parse(sessionData)
+                    if (parsedSession.user) {
+                        setUser(parsedSession.user)
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error parsing user data from localStorage", error)
+        }
+    };
+
+    useEffect(() => {
+        loadUserData();
+        
+        // Listen for custom event from LeaderSetting to update profile dynamically
+        window.addEventListener('user-profile-updated', loadUserData);
+        return () => window.removeEventListener('user-profile-updated', loadUserData);
+    }, [])
+
     const handleLogout = () => {
         localStorage.removeItem('user')
         localStorage.removeItem('session')

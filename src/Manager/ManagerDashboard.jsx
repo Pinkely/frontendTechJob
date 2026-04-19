@@ -13,7 +13,7 @@ const ManagerDashboard = () => {
             setLoading(true);
             try {
                 // เรียก API ที่ Join ตาราง work และ work_expense
-                const res = await axios.get(`http://192.168.1.93:3000/api/manager/financial-report?year=${selectedYear}`);
+                const res = await axios.get(`http://192.168.1.106:3000/api/manager/financial-report?year=${selectedYear}`);
                 if (Array.isArray(res.data)) {
                     setFinancialData(res.data);
                 } else {

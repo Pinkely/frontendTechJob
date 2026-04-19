@@ -21,7 +21,7 @@ const Settings = () => {
   });
 
   // 1. สร้างตัวแปร SERVER_URL กลางเอาไว้
-  const SERVER_URL = 'http://192.168.1.106:3000';
+  const SERVER_URL = 'http://192.168.1.93:3000';
   const API_BASE_URL = `${SERVER_URL}/api/manager`;
 
   useEffect(() => {

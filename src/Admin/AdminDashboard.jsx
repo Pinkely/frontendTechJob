@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { ShoppingCart, DollarSign, ArrowUp, ClipboardList, CheckCircle, Clock } from 'lucide-react';
 
-const API_URL = 'http://192.168.1.93:3000';
+const API_URL = 'http://192.168.1.106:3000';
 
 const AdminDashboard = () => {
   const [works, setWorks] = useState([]);
