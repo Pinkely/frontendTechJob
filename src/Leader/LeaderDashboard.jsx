@@ -7,45 +7,53 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap');
   
-  body { font-family: 'Kanit', sans-serif; background-color: #f8f9fd; }
+  body { font-family: 'Prompt', sans-serif; background-color: #f4f4f5; }
 
   .glass-card {
     background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255,255,255,0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(74,78,183,0.15);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-color: #d1d5db;
   }
   .work-item {
-    transition: all 0.2s ease;
-    border-left: 4px solid transparent;
+    transition: background-color 0.2s ease;
+    border-radius: 6px;
+    border: 1px solid transparent;
   }
-  .work-item:hover { background-color: #f8f9ff !important; }
+  .work-item:hover { 
+    background-color: #f9fafb !important; 
+    border-color: #e5e7eb;
+  }
   .work-item.active {
-    background-color: #f0f4ff !important;
-    border-left: 4px solid #4a4eb7;
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1;
   }
   .btn-gradient {
-    background: linear-gradient(135deg, #4a4eb7 0%, #6c71e0 100%);
-    border: none; color: white;
-    box-shadow: 0 4px 15px rgba(74,78,183,0.3);
-    transition: all 0.3s;
+  .btn-gradient {
+    background: #18181b;
+    border: 1px solid #18181b;
+    color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    font-weight: 500;
+    border-radius: 6px;
   }
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #3d4199 0%, #5a5fc2 100%);
-    box-shadow: 0 6px 20px rgba(74,78,183,0.4);
-    transform: translateY(-2px);
+    background: #27272a;
+    border-color: #27272a;
+    color: white;
   }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-  ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 `;
 
 // ======================================================
@@ -240,7 +248,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // RENDER
     // ===================================================
     return (
-        <div style={{ width: "100%", padding: "30px 50px", marginLeft: "14rem", minHeight: "100vh", backgroundColor: "#f8f9fd" }}>
+        <div style={{ width: "100%", padding: "30px 50px", marginLeft: "14rem", minHeight: "100vh", backgroundColor: "#f4f4f5" }}>
             <style>{styles}</style>
 
             {/* HEADER */}
@@ -257,8 +265,10 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                 </div>
                 <div className="glass-card px-3 py-2 d-flex align-items-center" style={{ cursor: "pointer" }}>
                     <div className="position-relative">
-                        <i className="bi bi-bell-fill" style={{ fontSize: "22px", color: "#4a4eb7" }}></i>
-                        <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                        <i className="bi bi-bell-fill" style={{ fontSize: "22px", color: "#18181b" }}></i>
+                        <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                            <span className="visually-hidden">New alerts</span>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -335,10 +345,10 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                     <div className="row g-4 mb-5">
                         <div className="col-6">
                             <div className="glass-card hover-lift p-4 text-center h-100 d-flex flex-column justify-content-center align-items-center"
-                                style={{ cursor: "pointer", borderBottom: "5px solid #4a4eb7" }}
+                                style={{ cursor: "pointer", borderBottom: "5px solid #18181b" }}
                                 onClick={goCheckWork}>
                                 <div className="mb-3 p-3 rounded-circle bg-light">
-                                    <i className="bi bi-clipboard-check-fill" style={{ fontSize: 40, color: "#4a4eb7" }}></i>
+                                    <i className="bi bi-clipboard-check-fill" style={{ fontSize: 40, color: "#18181b" }}></i>
                                 </div>
                                 <h4 className="fw-bold mb-1">ตรวจงาน</h4>
                                 <small className="text-muted">อนุมัติและตรวจสอบงานช่าง</small>
@@ -346,10 +356,10 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                         </div>
                         <div className="col-6">
                             <div className="glass-card hover-lift p-4 text-center h-100 d-flex flex-column justify-content-center align-items-center"
-                                style={{ cursor: "pointer", borderBottom: "5px solid #ff5a5a" }}
+                                style={{ cursor: "pointer", borderBottom: "5px solid #18181b" }}
                                 onClick={goReport}>
                                 <div className="mb-3 p-3 rounded-circle bg-light">
-                                    <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 40, color: "#ff5a5a" }}></i>
+                                    <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 40, color: "#18181b" }}></i>
                                 </div>
                                 <h4 className="fw-bold mb-1">รายงานปัญหา</h4>
                                 <small className="text-muted">ดูรายการแจ้งปัญหาและข้อร้องเรียน</small>
@@ -364,7 +374,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                         <div className="col-lg-7">
                             <div className="glass-card p-4 h-100">
                                 <div className="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 className="fw-bold m-0" style={{ color: "#4a4eb7" }}>
+                                    <h5 className="fw-bold m-0" style={{ color: "#18181b" }}>
                                         <i className="bi bi-list-task me-2"></i>รายการงานทั้งหมด
                                     </h5>
                                     <span className="badge bg-light text-dark border">{tasks.length} งาน</span>
@@ -420,7 +430,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                         {/* รายละเอียดงาน + มอบหมายช่าง */}
                         <div className="col-lg-5">
                             <div className="glass-card p-4 h-100 d-flex flex-column">
-                                <h5 className="fw-bold mb-4" style={{ color: "#4a4eb7" }}>
+                                <h5 className="fw-bold mb-4" style={{ color: "#18181b" }}>
                                     <i className="bi bi-card-text me-2"></i>รายละเอียดงาน
                                 </h5>
 
@@ -554,7 +564,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                         <div className="glass-card p-4 mb-5">
                             <div className="d-flex justify-content-between align-items-center mb-4">
                                 <div>
-                                    <h5 className="fw-bold m-0" style={{ color: "#4a4eb7" }}>
+                                    <h5 className="fw-bold m-0" style={{ color: "#18181b" }}>
                                         <i className="bi bi-geo-alt-fill me-2 text-danger"></i>ติดตามตำแหน่งงาน
                                     </h5>
                                     <div className="mt-1">

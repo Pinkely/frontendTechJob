@@ -8,40 +8,41 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // 1. หยิบข้อมูลจากกระเป๋า (localStorage)
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        console.log("ข้อมูลใน localStorage คือ:", storedUser);
+  // ... โค้ดส่วนอื่น ...
 
-        // 2. ใช้ user_id (ตามโครงสร้าง DB ของคุณ)
-        const userId = storedUser?.user_id; console.log("userId ที่ดึงมาได้คือ:", userId);
+const fetchUserData = async () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    
+    // ดึง userId และทำให้แน่ใจว่าเป็นแค่ตัวเลข/ข้อความที่ไม่มีเครื่องหมาย : ปน
+    let rawId = storedUser?.user_id || storedUser?.id;
+    const userId = rawId?.toString().split(':')[0]; // ป้องกันกรณีมี :1 ต่อท้าย
 
-        if (!userId) {
-          console.error("หา userId ไม่เจอใน localStorage");
-          setError("กรุณาเข้าสู่ระบบ");
-          setLoading(false);
-          return;
-        }
+    if (!userId) {
+      setError("ไม่พบรหัสผู้ใช้งาน");
+      setLoading(false);
+      return;
+    }
 
-        // 3. เรียก API (ย้ำว่าไม่ต้องมี /api เพราะ server.js ใช้ /users)
-        // ... โค้ดก่อนหน้า ...
-        const response = await axios.get(`http://localhost:3000/users/${userId}`);
+    // แก้ไข URL ให้มี /api นำหน้า (ตามที่ระบุในไฟล์ Route)
+    const response = await axios.get(`http://localhost:3000/api/users/${userId}`);
 
-        // ตรวจสอบว่ามีข้อมูลในชั้น response.data.user หรือไม่
-        if (response.data && response.data.user) {
-          // ดึงเฉพาะก้อนที่มีชื่อ "มานะ" (response.data.user) ไปใส่ใน State
-          setUserProfile(response.data.user);
-        } else {
-          console.error("หาข้อมูล user ไม่เจอใน response:", response.data);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        console.error("3. Error ตอนเรียก API:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (response.data) {
+      // ตรวจสอบโครงสร้างข้อมูลที่ UserController ส่งกลับมา
+      // ถ้าส่งมาเป็น { user: {...} } ให้ใช้ response.data.user
+      // ถ้าส่งมาเป็นก้อนข้อมูลเลย ให้ใช้ response.data
+      const userData = response.data.user || response.data;
+      setUserProfile(userData);
+    }
+  } catch (error) {
+    console.error("API Error:", error.response?.status, error.message);
+    setError("โหลดข้อมูลไม่สำเร็จ (404 หรือ Network Error)");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ... โค้ดส่วนอื่น ...
     fetchUserData();
   }, []);
 
@@ -81,14 +82,14 @@ const UserProfile = () => {
         <div style={styles.heroBody}>
           <div style={styles.avatarRing}>
             {/* ✨ แก้จุดที่ 2: ใช้ userProfile.avatar หรือแสดงตัวอักษรย่อถ้าไม่มีรูป */}
-            {userProfile.avatar && userProfile.avatar !== ""
+            {userProfile.avatar && userProfile.avatar !== "" 
               ? <img src={userProfile.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <span style={styles.avatarInitials}>{getInitials(userProfile.name || userProfile.username)}</span>
             }
           </div>
 
           <div style={styles.heroInfo}>
-            <h1 style={styles.heroName}>{userProfile.name || userProfile?.username || "กำลังโหลดชื่อ..."}</h1>
+            <h1 style={styles.heroName}>{userProfile.name || userProfile?.username|| "กำลังโหลดชื่อ..."}</h1>
             <p style={styles.heroSub}>@{userProfile.username} · {userProfile.department || 'แผนกทั่วไป'}</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               <span style={styles.badgeBlue}><ShieldCheck size={11} /> {userProfile.role}</span>
@@ -152,8 +153,8 @@ const UserProfile = () => {
 };
 
 const styles = {
-  page: { padding: '24px', width: '100%', minHeight: '100vh', overflowX: 'hidden', background: '#F0F8FF', marginLeft: '15rem' },
-  loadingWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', marginLeft: '15rem' },
+  page: { padding: '24px' ,width: '100%', minHeight: '100vh', overflowX: 'hidden', background: '#F0F8FF', marginLeft: '14rem' },
+  loadingWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', marginLeft: '14rem' },
   heroCard: { background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
   heroBanner: { height: 100, background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 60%, #06b6d4 100%)' },
   heroBody: { padding: '0 24px 24px', display: 'flex', alignItems: 'flex-end', gap: 16, marginTop: -44 },

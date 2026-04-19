@@ -3,9 +3,6 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Settings = () => {
-  // --- State สำหรับเก็บค่าต่างๆ แยกตามหมวดหมู่ ---
-
-  // 1. Profile settings เปลี่ยนค่าเริ่มต้นให้เป็นค่าว่างไว้ก่อน
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -13,29 +10,9 @@ const Settings = () => {
     avatar: null
   });
 
-  // 2. System settings (ตั้งค่าระบบ: ภาษา, เวลา)
-  const [system, setSystem] = useState({
-    language: 'th',
-    timezone: 'Asia/Bangkok',
-    dateFormat: 'DD/MM/YYYY',
-    currency: 'THB'
-  });
-
-  // 3. Notification settings (ตั้งค่าการแจ้งเตือน)
-  const [notifications, setNotifications] = useState({
-    emailNotify: true,
-    smsNotify: false,
-    pushNotify: true,
-    weeklyReport: true,
-    monthlyReport: false
-  });
-
-  // 4. Security settings (ความปลอดภัย)
-  const [security, setSecurity] = useState({
-    twoFactor: false,
-    sessionTimeout: '30',
-    loginAlert: true
-  });
+  const [system, setSystem] = useState({ language: 'th', timezone: 'Asia/Bangkok', dateFormat: 'DD/MM/YYYY', currency: 'THB' });
+  const [notifications, setNotifications] = useState({ emailNotify: true, smsNotify: false, pushNotify: true, weeklyReport: true, monthlyReport: false });
+  const [security, setSecurity] = useState({ loginAlert: true, sessionTimeout: '30' });
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -43,93 +20,100 @@ const Settings = () => {
     confirmPassword: ''
   });
 
-  // --- เพิ่ม useEffect เพื่อดึงข้อมูลจาก Backend ---
+  // 1. สร้างตัวแปร SERVER_URL กลางเอาไว้
+  const SERVER_URL = 'http://192.168.1.106:3000';
+  const API_BASE_URL = `${SERVER_URL}/api/manager`;
+
   useEffect(() => {
-    // ดึงข้อมูล User ที่ Login อยู่จาก LocalStorage
-    const loggedInUser = JSON.parse(localStorage.getItem('user'));
-    console.log("ข้อมูลใน LocalStorage คือ:", loggedInUser);
+    // 1. เปลี่ยนมาดึงข้อมูลจากคีย์ "session" ตามที่ App.jsx บันทึกไว้
+    const sessionString = localStorage.getItem('session');
+    console.log("1. ข้อมูลดิบใน LocalStorage:", sessionString);
 
-    // 1. แก้เป็น loggedInUser.id ให้ตรงกับคีย์ใน Object
-    if (loggedInUser && loggedInUser.id) {
+    if (!sessionString) return;
 
-      // เซ็ตข้อมูลชุดแรกจาก LocalStorage ให้โชว์ชื่อและอีเมลทันทีไม่ต้องรอโหลด
-      setProfile({
+    // 2. แปลงข้อมูลและเจาะเข้าไปเอา .user ออกมา
+    const sessionData = JSON.parse(sessionString);
+    const loggedInUser = sessionData.user;
+
+    // เช็ค id ให้รองรับทั้ง user_id
+    const userId = loggedInUser?.id || loggedInUser?.user_id;
+    console.log("2. ไอดีผู้ใช้ที่ค้นพบ:", userId);
+
+    if (userId) {
+      setProfile(prev => ({
+        ...prev,
         name: loggedInUser.name || '',
-        email: loggedInUser.email || '',
-        phone: '', // ปล่อยว่างไว้ก่อน รอเบอร์โทรจาก Backend
-        avatar: null
-      });
+        email: loggedInUser.email || ''
+      }));
 
-      // 2. ยิง API ไปดึงข้อมูลเต็ม (เช็ค URL ของ Backend ให้ตรงด้วยนะครับ)
-      // เปลี่ยนจาก /api/users/ เป็นเส้นทางที่ตั้งไว้ (เช่น /api/manager/profile/)
-      axios.get(`http://192.168.1.93:3000/api/manager/profile/${loggedInUser.id}`)
+      axios.get(`${API_BASE_URL}/profile/${userId}`)
         .then(response => {
-          console.log("ข้อมูล User จาก Backend:", response.data);
+          console.log("3. ข้อมูลสำเร็จจาก Backend:", response.data);
           const userData = response.data;
-
-          // 3. เอาข้อมูลจาก Backend มาอัปเดตทับอีกรอบ เพื่อใส่เบอร์โทรศัพท์
           setProfile({
             name: userData.name || loggedInUser.name || '',
             email: userData.email || loggedInUser.email || '',
-            phone: userData.phone || '', // ได้เบอร์โทรมาแล้ว!
-            avatar: null
+            phone: userData.phone || '',
+            avatar: userData.avatar || null
           });
         })
         .catch(error => {
-          console.error("Error fetching user profile:", error);
+          console.error("🚨 เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
         });
+    } else {
+      console.warn("ไม่พบ userId ใน Session ครับ");
     }
   }, []);
 
-  // --- ฟังก์ชันจัดการการเปลี่ยนค่า (Handle Change) ---
   const handleProfileChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSystemChange = (field, value) => {
-    setSystem(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleNotificationChange = (field, value) => {
-    setNotifications(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSecurityChange = (field, value) => {
-    setSecurity(prev => ({ ...prev, [field]: value }));
-  };
-
-  // ฟังก์ชันกดบันทึก
-  // ใน ManagerSetting.jsx หาฟังก์ชัน handleSave แล้วแทนที่ด้วยโค้ดนี้:
   const handleSave = async () => {
-    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+    const sessionString = localStorage.getItem('session');
+    if (!sessionString) {
+      alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+      return;
+    }
 
-    if (loggedInUser && loggedInUser.id) {
+    const sessionData = JSON.parse(sessionString);
+    const loggedInUser = sessionData.user;
+    const userId = loggedInUser?.id || loggedInUser?.user_id;
+
+    if (userId) {
       try {
-        // เรียก API โดยส่งไอดี และข้อมูลใน state profile ไป
-        const response = await axios.put(`http://192.168.1.93:3000/api/manager/update-profile/${loggedInUser.id}`, {
+        const response = await axios.put(`${API_BASE_URL}/update-profile/${userId}`, {
           name: profile.name,
           email: profile.email,
           phone: profile.phone
         });
 
         if (response.status === 200) {
-          alert('บันทึกข้อมูลส่วนตัวลงฐานข้อมูลเรียบร้อยแล้ว');
-
-          // อัปเดตข้อมูลใน LocalStorage ด้วยเพื่อให้ชื่อที่ Navbar เปลี่ยนตาม (ถ้ามีแสดง)
-          const updatedUser = { ...loggedInUser, name: profile.name, email: profile.email };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
+          alert('บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว');
+          // อัปเดต Session ใน LocalStorage
+          sessionData.user = {
+            ...loggedInUser,
+            name: profile.name,
+            email: profile.email,
+            phone: profile.phone,
+            avatar: profile.avatar
+          };
+          localStorage.setItem('session', JSON.stringify(sessionData));
         }
       } catch (error) {
         console.error("Error saving profile:", error);
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
       }
-    } else {
-      alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
     }
   };
 
   const handleChangePassword = async () => {
-    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+    const sessionString = localStorage.getItem('session');
+    if (!sessionString) return;
+
+    const sessionData = JSON.parse(sessionString);
+    const loggedInUser = sessionData.user;
+    const userId = loggedInUser?.id || loggedInUser?.user_id;
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert('รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน');
@@ -137,7 +121,7 @@ const Settings = () => {
     }
 
     try {
-      const response = await axios.put(`http://192.168.1.93:3000/api/manager/update-password/${loggedInUser.id}`, {
+      const response = await axios.put(`${API_BASE_URL}/update-password/${userId}`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword
@@ -145,7 +129,6 @@ const Settings = () => {
 
       if (response.status === 200) {
         alert('เปลี่ยนรหัสผ่านสำเร็จ');
-        // ล้างฟอร์ม
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch (error) {
@@ -153,42 +136,60 @@ const Settings = () => {
     }
   };
 
+  // เพิ่มในส่วนของฟังก์ชันหลักใน ManagerSetting.jsx
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const sessionString = localStorage.getItem('session');
+    const sessionData = JSON.parse(sessionString);
+    const userId = sessionData.user?.id || sessionData.user?.user_id;
+
+    // สร้าง FormData เพื่อส่งไฟล์
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/upload-avatar/${userId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.status === 200) {
+        // อัปเดต state รูปภาพในหน้าจอทันที
+        setProfile(prev => ({ ...prev, avatar: response.data.avatar }));
+        alert('เปลี่ยนรูปโปรไฟล์สำเร็จ');
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert('อัปโหลดรูปภาพล้มเหลว');
+    }
+  };
+
+  // สไตล์ที่ปรับให้ดูนุ่มนวลและน่ารักขึ้นเล็กน้อย
+  const inputStyle = { borderRadius: '12px', border: '1px solid #e0e0e0', padding: '10px 15px' };
+  const btnSoftStyle = { backgroundColor: '#ffb6c1', borderColor: '#ffb6c1', color: '#fff', borderRadius: '12px', padding: '8px 20px', fontWeight: '500' };
+
   return (
-    <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem' }} >
-      <h3 className="mb-4">
+    <div className="p-4" style={{ width: '100%', minHeight: '100vh', marginLeft: '14rem', backgroundColor: '#fafafa' }} >
+      <h3 className="mb-4" style={{ color: '#555' }}>
         <i className="bi bi-gear me-2"></i>
         ตั้งค่าระบบ
       </h3>
 
       <Tab.Container defaultActiveKey="profile">
         <Row>
-          {/* เมนูด้านซ้าย (Sidebar Tabs) */}
           <Col md={3}>
-            <Card className="mb-3">
+            <Card className="mb-3 border-0 shadow-sm" style={{ borderRadius: '16px' }}>
               <Card.Body className="p-0">
                 <Nav variant="pills" className="flex-column">
                   <Nav.Item>
-                    <Nav.Link eventKey="profile" className="d-flex align-items-center p-3">
-                      <i className="bi bi-person-circle me-2"></i>
-                      ข้อมูลส่วนตัว
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="system" className="d-flex align-items-center p-3">
-                      <i className="bi bi-gear me-2"></i>
-                      ระบบ
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="notifications" className="d-flex align-items-center p-3">
-                      <i className="bi bi-bell me-2"></i>
-                      การแจ้งเตือน
+                    <Nav.Link eventKey="profile" className="d-flex align-items-center p-3" style={{ borderRadius: '16px 16px 0 0' }}>
+                      <i className="bi bi-person-circle me-2"></i> ข้อมูลส่วนตัว
                     </Nav.Link>
                   </Nav.Item>
                   <Nav.Item>
                     <Nav.Link eventKey="security" className="d-flex align-items-center p-3">
-                      <i className="bi bi-shield-lock me-2"></i>
-                      ความปลอดภัย
+                      <i className="bi bi-shield-lock me-2"></i> ความปลอดภัย
                     </Nav.Link>
                   </Nav.Item>
                 </Nav>
@@ -196,256 +197,100 @@ const Settings = () => {
             </Card>
           </Col>
 
-          {/* เนื้อหาด้านขวา (Content Area) */}
           <Col md={9}>
             <Tab.Content>
               {/* Profile Tab */}
               <Tab.Pane eventKey="profile">
-                <Card>
-                  <Card.Header className="bg-white">
-                    <h5 className="mb-0">ข้อมูลส่วนตัว</h5>
+                <Card className="border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+                  <Card.Header className="bg-white border-bottom-0 pt-4 pb-2">
+                    <h5 className="mb-0 px-2" style={{ color: '#666' }}>ข้อมูลส่วนตัว</h5>
                   </Card.Header>
-                  <Card.Body>
+                  <Card.Body className="px-4 pb-4">
                     <Row className="mb-4">
                       <Col md={3} className="text-center">
                         <div
-                          className="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
-                          style={{ width: '100px', height: '100px' }}
+                          className="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm"
+                          style={{ width: '120px', height: '120px', overflow: 'hidden' }}
                         >
-                          <i className="bi bi-person-fill text-white" style={{ fontSize: '3rem' }}></i>
+                          {profile.avatar ? (
+                            <img
+                              src={`${SERVER_URL}/uploads/${profile.avatar}`}
+                              alt="Profile"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <i className="bi bi-person-fill text-secondary" style={{ fontSize: '4rem' }}></i>
+                          )}
                         </div>
-                        <Button variant="outline-primary" size="sm">
-                          <i className="bi bi-camera me-1"></i>
-                          เปลี่ยนรูป
+
+                        {/* ซ่อน input file จริงๆ แล้วใช้ปุ่มกดสั่งแทน */}
+                        <input
+                          type="file"
+                          id="avatarInput"
+                          hidden
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          style={{ borderRadius: '20px' }}
+                          onClick={() => document.getElementById('avatarInput').click()}
+                        >
+                          <i className="bi bi-camera me-1"></i> เปลี่ยนรูป
                         </Button>
                       </Col>
                       <Col md={9}>
                         <Form.Group className="mb-3">
-                          <Form.Label>ชื่อ-นามสกุล</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={profile.name}
-                            onChange={(e) => handleProfileChange('name', e.target.value)}
-                          />
+                          <Form.Label className="text-muted">ชื่อ-นามสกุล</Form.Label>
+                          <Form.Control type="text" style={inputStyle} value={profile.name} onChange={(e) => handleProfileChange('name', e.target.value)} />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                          <Form.Label>อีเมล</Form.Label>
-                          <Form.Control
-                            type="email"
-                            value={profile.email}
-                            onChange={(e) => handleProfileChange('email', e.target.value)}
-                          />
+                          <Form.Label className="text-muted">อีเมล</Form.Label>
+                          <Form.Control type="email" style={inputStyle} value={profile.email} onChange={(e) => handleProfileChange('email', e.target.value)} />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                          <Form.Label>เบอร์โทรศัพท์</Form.Label>
-                          <Form.Control
-                            type="tel"
-                            value={profile.phone}
-                            onChange={(e) => handleProfileChange('phone', e.target.value)}
-                          />
+                          <Form.Label className="text-muted">เบอร์โทรศัพท์</Form.Label>
+                          <Form.Control type="tel" style={inputStyle} value={profile.phone} onChange={(e) => handleProfileChange('phone', e.target.value)} />
                         </Form.Group>
                       </Col>
                     </Row>
                   </Card.Body>
                 </Card>
-              </Tab.Pane>
-
-              {/* System Tab */}
-              <Tab.Pane eventKey="system">
-                <Card>
-                  <Card.Header className="bg-white">
-                    <h5 className="mb-0">ตั้งค่าระบบ</h5>
-                  </Card.Header>
-                  <Card.Body>
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>ภาษา</Form.Label>
-                          <Form.Select
-                            value={system.language}
-                            onChange={(e) => handleSystemChange('language', e.target.value)}
-                          >
-                            <option value="th">ไทย</option>
-                            <option value="en">English</option>
-                          </Form.Select>
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>เขตเวลา</Form.Label>
-                          <Form.Select
-                            value={system.timezone}
-                            onChange={(e) => handleSystemChange('timezone', e.target.value)}
-                          >
-                            <option value="Asia/Bangkok">Asia/Bangkok (UTC+7)</option>
-                            <option value="Asia/Singapore">Asia/Singapore (UTC+8)</option>
-                            <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
-                          </Form.Select>
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>รูปแบบวันที่</Form.Label>
-                          <Form.Select
-                            value={system.dateFormat}
-                            onChange={(e) => handleSystemChange('dateFormat', e.target.value)}
-                          >
-                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                          </Form.Select>
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>สกุลเงิน</Form.Label>
-                          <Form.Select
-                            value={system.currency}
-                            onChange={(e) => handleSystemChange('currency', e.target.value)}
-                          >
-                            <option value="THB">บาท (THB)</option>
-                            <option value="USD">ดอลลาร์ (USD)</option>
-                            <option value="EUR">ยูโร (EUR)</option>
-                          </Form.Select>
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                  </Card.Body>
-                </Card>
-              </Tab.Pane>
-
-              {/* Notifications Tab */}
-              <Tab.Pane eventKey="notifications">
-                <Card>
-                  <Card.Header className="bg-white">
-                    <h5 className="mb-0">การแจ้งเตือน</h5>
-                  </Card.Header>
-                  <Card.Body>
-                    <h6 className="text-muted mb-3">ช่องทางการแจ้งเตือน</h6>
-                    <Form.Check
-                      type="switch"
-                      id="emailNotify"
-                      label="แจ้งเตือนทางอีเมล"
-                      checked={notifications.emailNotify}
-                      onChange={(e) => handleNotificationChange('emailNotify', e.target.checked)}
-                      className="mb-3"
-                    />
-                    <Form.Check
-                      type="switch"
-                      id="smsNotify"
-                      label="แจ้งเตือนทาง SMS"
-                      checked={notifications.smsNotify}
-                      onChange={(e) => handleNotificationChange('smsNotify', e.target.checked)}
-                      className="mb-3"
-                    />
-                    <Form.Check
-                      type="switch"
-                      id="pushNotify"
-                      label="Push Notification"
-                      checked={notifications.pushNotify}
-                      onChange={(e) => handleNotificationChange('pushNotify', e.target.checked)}
-                      className="mb-3"
-                    />
-
-                    <hr />
-
-                    <h6 className="text-muted mb-3">รายงาน</h6>
-                    <Form.Check
-                      type="switch"
-                      id="weeklyReport"
-                      label="รายงานประจำสัปดาห์"
-                      checked={notifications.weeklyReport}
-                      onChange={(e) => handleNotificationChange('weeklyReport', e.target.checked)}
-                      className="mb-3"
-                    />
-                    <Form.Check
-                      type="switch"
-                      id="monthlyReport"
-                      label="รายงานประจำเดือน"
-                      checked={notifications.monthlyReport}
-                      onChange={(e) => handleNotificationChange('monthlyReport', e.target.checked)}
-                      className="mb-3"
-                    />
-                  </Card.Body>
-                </Card>
+                <div className="d-flex justify-content-end mt-4">
+                  <Button variant="light" className="me-3" style={{ borderRadius: '12px', padding: '8px 20px' }}>ยกเลิก</Button>
+                  <Button style={btnSoftStyle} onClick={handleSave}>
+                    <i className="bi bi-check-lg me-1"></i> บันทึกข้อมูล
+                  </Button>
+                </div>
               </Tab.Pane>
 
               {/* Security Tab */}
               <Tab.Pane eventKey="security">
-                <Card className="mb-3">
-                  <Card.Header className="bg-white">
-                    <h5 className="mb-0">ความปลอดภัย</h5>
+                <Card className="mb-3 border-0 shadow-sm" style={{ borderRadius: '16px' }}>
+                  <Card.Header className="bg-white border-bottom-0 pt-4 pb-2">
+                    <h5 className="mb-0 px-2" style={{ color: '#666' }}>เปลี่ยนรหัสผ่าน</h5>
                   </Card.Header>
-                  <Card.Body>
-                    <Form.Check
-                      type="switch"
-                      id="loginAlert"
-                      label="แจ้งเตือนเมื่อมีการเข้าสู่ระบบจากอุปกรณ์ใหม่"
-                      checked={security.loginAlert}
-                      onChange={(e) => handleSecurityChange('loginAlert', e.target.checked)}
-                      className="mb-3"
-                    />
-
+                  <Card.Body className="px-4 pb-4">
                     <Form.Group className="mb-3">
-                      <Form.Label>หมดเวลาเซสชัน (นาที)</Form.Label>
-                      <Form.Select
-                        value={security.sessionTimeout}
-                        onChange={(e) => handleSecurityChange('sessionTimeout', e.target.value)}
-                        style={{ width: '200px' }}
-                      >
-                        <option value="15">15 นาที</option>
-                        <option value="30">30 นาที</option>
-                        <option value="60">1 ชั่วโมง</option>
-                        <option value="120">2 ชั่วโมง</option>
-                      </Form.Select>
-                    </Form.Group>
-
-                    <hr />
-
-                    <h6 className="text-muted mb-3">เปลี่ยนรหัสผ่าน</h6>
-                    <Form.Group className="mb-3">
-                      <Form.Label>รหัสผ่านปัจจุบัน</Form.Label>
-                      <Form.Control
-                        type="password"
-                        style={{ width: '300px' }}
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      />
+                      <Form.Label className="text-muted">รหัสผ่านปัจจุบัน</Form.Label>
+                      <Form.Control type="password" style={{ ...inputStyle, maxWidth: '400px' }} value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
                     </Form.Group>
                     <Form.Group className="mb-3">
-                      <Form.Label>รหัสผ่านใหม่</Form.Label>
-                      <Form.Control
-                        type="password"
-                        style={{ width: '300px' }}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      />
+                      <Form.Label className="text-muted">รหัสผ่านใหม่</Form.Label>
+                      <Form.Control type="password" style={{ ...inputStyle, maxWidth: '400px' }} value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
                     </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>ยืนยันรหัสผ่านใหม่</Form.Label>
-                      <Form.Control
-                        type="password"
-                        style={{ width: '300px' }}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      />
+                    <Form.Group className="mb-4">
+                      <Form.Label className="text-muted">ยืนยันรหัสผ่านใหม่</Form.Label>
+                      <Form.Control type="password" style={{ ...inputStyle, maxWidth: '400px' }} value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
                     </Form.Group>
-                    <Button variant="outline-primary" onClick={handleChangePassword}>
+                    <Button style={btnSoftStyle} onClick={handleChangePassword}>
                       เปลี่ยนรหัสผ่าน
                     </Button>
                   </Card.Body>
                 </Card>
               </Tab.Pane>
             </Tab.Content>
-
-            {/* Save Button */}
-            <div className="d-flex justify-content-end mt-3">
-              <Button variant="secondary" className="me-2">ยกเลิก</Button>
-              <Button variant="primary" onClick={handleSave}>
-                <i className="bi bi-check-lg me-1"></i>
-                บันทึกการตั้งค่า
-              </Button>
-            </div>
           </Col>
         </Row>
       </Tab.Container>

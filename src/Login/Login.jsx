@@ -30,6 +30,8 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
+
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -43,12 +45,17 @@ const LoginPage = ({ onLogin }) => {
         body: JSON.stringify({ identifier: usernameOrEmail, password }),
       });
       const data = await response.json();
+      
       if (response.ok) {
-        // 3. แก้ไขตัวแปร email เป็น usernameOrEmail เพื่อป้องกัน Error
+        // ✨ [จุดที่ต้องเพิ่ม] บันทึกข้อมูลผู้ใช้ลงใน localStorage
+        // เพื่อให้หน้า UserProfile ไปดึง ID ของคนนี้ไปใช้
+        localStorage.setItem('user', JSON.stringify(data.user)); 
+
         showSuccess(`ยินดีต้อนรับ ${data.user?.name || usernameOrEmail}`);
+        
         if (onLogin) onLogin(data.user);
 
-        // 4. ให้ Navigate ไปตาม Role แทนการไป /home
+        // นำทางไปตาม Role
         navigate(getDashboardPath(data.user.role));
       } else {
         setError(data.message || "การเข้าสู่ระบบล้มเหลว");
@@ -59,6 +66,7 @@ const LoginPage = ({ onLogin }) => {
       setIsLoading(false);
     }
   };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError("");

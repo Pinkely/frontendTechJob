@@ -5,18 +5,20 @@ import { Modal, Button, Badge, Card } from 'react-bootstrap';
 const styles = `
   .glass-card {
     background: #ffffff;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
   }
   .btn-approve {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: #10b981;
     border: none; color: white;
   }
+  .btn-approve:hover { background: #059669; color: white; }
   .btn-reject {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: #ef4444;
     border: none; color: white;
   }
+  .btn-reject:hover { background: #dc2626; color: white; }
 `;
 
 const LeaderWork = ({ tasks, setTasks }) => {
@@ -53,7 +55,7 @@ const LeaderWork = ({ tasks, setTasks }) => {
     };
 
     return (
-        <div className="container-fluid py-5" style={{ marginLeft: '14rem', backgroundColor: '#f8f9fd', minHeight: '100vh' }}>
+        <div className="container-fluid py-5" style={{ marginLeft: '14rem', backgroundColor: '#f4f4f5', minHeight: '100vh' }}>
             <style>{styles}</style>
 
             <div className="container">
