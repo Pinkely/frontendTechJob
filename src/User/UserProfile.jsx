@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Mail, Phone, MapPin, Briefcase, Calendar, ShieldCheck, Tag, Hash } from 'lucide-react';
+import { Mail, Phone, MapPin, Briefcase, Calendar, ShieldCheck, Tag, Hash,UserRound } from 'lucide-react';
 
 const UserProfile = () => {
   const [userProfile, setUserProfile] = useState(null);
@@ -8,7 +8,6 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  // ... โค้ดส่วนอื่น ...
 
 const fetchUserData = async () => {
   try {
@@ -42,7 +41,6 @@ const fetchUserData = async () => {
   }
 };
 
-// ... โค้ดส่วนอื่น ...
     fetchUserData();
   }, []);
 
@@ -113,6 +111,7 @@ const fetchUserData = async () => {
           {[
             { icon: <Mail size={15} />, label: 'อีเมล', value: userProfile.email },
             { icon: <Phone size={15} />, label: 'เบอร์โทร', value: userProfile.phone || 'ไม่ได้ระบุ' },
+            { icon: <UserRound size={15} />, label: 'ชื่อเล่น', value: userProfile.nickname || 'ไม่ได้ระบุ' },
             { icon: <Tag size={15} />, label: 'ประเภทพนักงาน', value: userProfile.type || 'พนักงานประจำ' },
             { icon: <Hash size={15} />, label: 'รหัสพนักงาน', value: `#USR-${String(userProfile.user_id).padStart(3, '0')}` },
           ].map((row, i) => (
@@ -131,18 +130,18 @@ const fetchUserData = async () => {
           <div style={styles.statGrid}>
             <div style={styles.statBox}>
               <div style={styles.statLabelRow}><Briefcase size={14} color="#3b82f6" /> <span style={styles.statLabel}>สังกัดแผนก</span></div>
-              <p style={styles.statValue}>{userProfile.department || '-'}</p>
+              <p style={styles.statValue}>{userProfile.type || '-'}</p>
             </div>
             <div style={styles.statBox}>
-              <div style={styles.statLabelRow}><MapPin size={14} color="#3b82f6" /> <span style={styles.statLabel}>พื้นที่ปฏิบัติงาน</span></div>
-              <p style={styles.statValue}>{userProfile.type || 'สำนักงานใหญ่'}</p>
+              <div style={styles.statLabelRow}><MapPin size={14} color="#3b82f6" /> <span style={styles.statLabel}>เงินเดือน</span></div>
+              <p style={styles.statValue}>{userProfile.salary || 'ไม่ได้ระบุ'}</p>
             </div>
             <div style={styles.statBox}>
               <div style={styles.statLabelRow}><ShieldCheck size={14} color="#3b82f6" /> <span style={styles.statLabel}>ระดับสิทธิ์</span></div>
               <p style={styles.statValue}>{userProfile.role}</p>
             </div>
             <div style={styles.statBox}>
-              <div style={styles.statLabelRow}><Calendar size={14} color="#3b82f6" /> <span style={styles.statLabel}>วันที่ลงทะเบียน</span></div>
+              <div style={styles.statLabelRow}><Calendar size={14} color="#3b82f6" /> <span style={styles.statLabel}>วันที่เริ่มงาน</span></div>
               <p style={styles.statValue}>{formatDate(userProfile.created_at)}</p>
             </div>
           </div>

@@ -98,10 +98,10 @@ const dateTemplate = (date) => {
             style={{ minHeight: '100vh', background: '#F0F8FF', marginLeft: '14rem' }}
         >
             <div className='p-4'>
-                <h1 className='fw-bolder mb-4 text-primary'>
-                    <i className="bi bi-calendar-check me-3"></i>
-                    ปฏิทินกิจกรรม
-                </h1>
+               <h1 className='fw-bolder mb-4 text-primary'>
+  <i className="bi bi-calendar-check me-3"></i>
+  ปฏิทินกิจกรรม
+</h1>
                 <hr className='mb-4' />
 
                 <div className='row'>
