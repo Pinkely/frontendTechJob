@@ -45,25 +45,26 @@ const AdminWork = () => {
   const nameCustomerRef = useRef();
   const moneyRef = useRef();
   const costRef = useRef();
+  const jobPriceRef = useRef();
 
-// ในไฟล์ AdminWork.jsx
-const fetchWorks = async () => {
-  try {
-    const res = await fetch(`${API_URL}/works/getAll`);
-    
-    // 1. เช็คก่อนว่า Server ตอบกลับมาสำเร็จ (Status 200-299) หรือไม่
-    if (!res.ok) {
+  // ในไฟล์ AdminWork.jsx
+  const fetchWorks = async () => {
+    try {
+      const res = await fetch(`${API_URL}/works/getAll`);
+
+      // 1. เช็คก่อนว่า Server ตอบกลับมาสำเร็จ (Status 200-299) หรือไม่
+      if (!res.ok) {
         throw new Error(`API Error: ${res.status} ${res.statusText}`);
-    }
+      }
 
-    const data = await res.json();
-    setWorks(data.works || []);
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    alert("ไม่สามารถดึงข้อมูลได้: " + err.message);
-  }
-  // ลบ finally { setLoading(false); } ออกไปเลย
-};
+      const data = await res.json();
+      setWorks(data.works || []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      alert("ไม่สามารถดึงข้อมูลได้: " + err.message);
+    }
+    // ลบ finally { setLoading(false); } ออกไปเลย
+  };
 
   const fetchSupervisors = async () => {
     try {
@@ -106,6 +107,7 @@ const fetchWorks = async () => {
       if (dateWorkRef.current) dateWorkRef.current.value = work.start_date ? work.start_date.split('T')[0] : '';
       if (nameCustomerRef.current) nameCustomerRef.current.value = work.customer_name || '';
       if (timeStartRef.current) timeStartRef.current.value = work.work_time || '09:00';
+      if (jobPriceRef.current) jobPriceRef.current.value = work.job_price || '';
     }, 100);
   };
 
@@ -161,6 +163,7 @@ const fetchWorks = async () => {
     const start_date = dateWorkRef.current?.value;
     const work_time = timeStartRef.current?.value;
     const customer_name = nameCustomerRef.current?.value;
+    const job_price = jobPriceRef.current?.value || 0;
 
     if (!job_name || !selectedWorkType || !job_detail || !addressInput || !start_date || !customer_name) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน');
@@ -175,6 +178,7 @@ const fetchWorks = async () => {
       location: addressInput,
       start_date,
       work_time,
+      job_price: parseFloat(job_price) || 0,
       supervisor_id: parseInt(supervisorId) || 2,
       admin_id: parseInt(localStorage.getItem('user_id')) || 1
     };
@@ -303,7 +307,10 @@ const fetchWorks = async () => {
             </div>
             <Form.Group className="mb-3"><Form.Label>รายละเอียดงาน <span className="text-danger">*</span></Form.Label><Form.Control ref={detailRef} as="textarea" rows={3} placeholder="อธิบายรายละเอียด" /></Form.Group>
             <Form.Group className="mb-3"><Form.Label>สถานที่ / จุดปักหมุด <span className="text-danger">*</span></Form.Label><InputGroup><Button variant="outline-danger" onClick={handleOpenMap}><i className="bi bi-geo-alt-fill me-1"></i> ปักหมุด</Button><Form.Control value={addressInput} onChange={(e) => setAddressInput(e.target.value)} placeholder="ระบุสถานที่ หรือ กดปักหมุดเพื่อระบุพิกัด" /></InputGroup></Form.Group>
-            <div className='d-flex'><Form.Group className="mb-3 w-50 mr-2"><Form.Label>ชื่อลูกค้า <span className="text-danger">*</span></Form.Label><Form.Control ref={nameCustomerRef} type="text" placeholder="ระบุชื่อลูกค้า" /></Form.Group></div>
+            <div className="row">
+              <div className="col-md-6"><Form.Group className="mb-3"><Form.Label>ชื่อลูกค้า <span className="text-danger">*</span></Form.Label><Form.Control ref={nameCustomerRef} type="text" placeholder="ระบุชื่อลูกค้า" /></Form.Group></div>
+              <div className="col-md-6"><Form.Group className="mb-3"><Form.Label>ราคางาน (บาท)</Form.Label><Form.Control ref={jobPriceRef} type="number" min="0" step="0.01" placeholder="0.00" /></Form.Group></div>
+            </div>
             <div className="row"><div className="col-md-6"><Form.Group className="mb-3"><Form.Label>วันที่ <span className="text-danger">*</span></Form.Label><Form.Control ref={dateWorkRef} type="date" /></Form.Group></div><div className="col-md-6"><Form.Group className="mb-3"><Form.Label>เวลาเริ่ม</Form.Label><Form.Control ref={timeStartRef} type="time" defaultValue="09:00" /></Form.Group></div></div>
           </Form>
         </Modal.Body>
@@ -359,6 +366,14 @@ const fetchWorks = async () => {
                 <small className="text-muted d-block">รายละเอียดงาน</small>
                 <p className="mb-0">{selectedWork.job_detail || '-'}</p>
               </div>
+              <div className="col-md-4 text-md-end">
+                <div className="p-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-25">
+                  <small className="text-primary d-block fw-bold mb-1">ราคางานรวม</small>
+                  <h3 className="fw-bold mb-0 text-primary">
+                    ฿{Number(selectedWork.job_price || 0).toLocaleString()}
+                  </h3>
+                </div>
+              </div>
 
               {/* ตารางรายการวัสดุ/ค่าใช้จ่าย */}
               <div className="mt-3">
@@ -389,7 +404,7 @@ const fetchWorks = async () => {
                             <td>{Number(exp.material_cost || 0).toLocaleString()}</td>
                             <td>{Number(exp.other_cost || 0).toLocaleString()}</td>
                             <td className="fw-semibold">{Number(exp.total_cost || 0).toLocaleString()}</td>
-                            <td className="text-success fw-semibold">{Number(exp.revenue || 0).toLocaleString()}</td>
+                            <td className="text-success fw-semibold">{Number(exp.job_price || 0).toLocaleString()}</td>
                             <td className={`fw-bold ${Number(exp.profit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                               {Number(exp.profit || 0).toLocaleString()}
                             </td>
@@ -402,7 +417,7 @@ const fetchWorks = async () => {
                           <td>{expenses.reduce((s, e) => s + Number(e.material_cost || 0), 0).toLocaleString()}</td>
                           <td>{expenses.reduce((s, e) => s + Number(e.other_cost || 0), 0).toLocaleString()}</td>
                           <td>{expenses.reduce((s, e) => s + Number(e.total_cost || 0), 0).toLocaleString()}</td>
-                          <td className="text-success">{expenses.reduce((s, e) => s + Number(e.revenue || 0), 0).toLocaleString()}</td>
+                          <td className="text-success">{expenses.reduce((s, e) => s + Number(e.job_price || 0), 0).toLocaleString()}</td>
                           <td className={expenses.reduce((s, e) => s + Number(e.profit || 0), 0) >= 0 ? 'text-success' : 'text-danger'}>
                             {expenses.reduce((s, e) => s + Number(e.profit || 0), 0).toLocaleString()}
                           </td>
@@ -424,7 +439,7 @@ const fetchWorks = async () => {
                     <div className="col-3">
                       <small className="text-muted d-block">รายได้</small>
                       <span className="fw-bold fs-5 text-dark">
-                        {Number(selectedWork.revenue || 0).toLocaleString()}
+                        {Number(selectedWork.job_price || 0).toLocaleString()}
                       </span>
                       <small className="text-muted ms-1">บาท</small>
                     </div>
@@ -512,7 +527,7 @@ const fetchWorks = async () => {
                             <Dropdown.Item onClick={() => handleShowDetail(work)}><i className="bi bi-eye me-2 text-primary"></i>ดูรายละเอียด</Dropdown.Item>
                             <Dropdown.Item onClick={() => handleEdit(work)}><i className="bi bi-pencil me-2 text-warning"></i>แก้ไขข้อมูล</Dropdown.Item>
                             {work.status === 'รอดำเนินการ' && (<Dropdown.Item onClick={() => handleSendToLeader(work.work_id)}><i className="bi bi-send me-2 text-success"></i>ส่งให้หัวหน้าช่าง</Dropdown.Item>)}
-                            <Dropdown.Divider /><Dropdown.Item onClick={() => handleDelete(work.work_id)} className="text-danger"><i className="bi bi-trash me-2"></i>ลบ</Dropdown.Item>
+                            {/* <Dropdown.Divider /><Dropdown.Item onClick={() => handleDelete(work.work_id)} className="text-danger"><i className="bi bi-trash me-2"></i>ลบ</Dropdown.Item> */}
                           </Dropdown.Menu>
                         </Dropdown>
                       </td>
