@@ -17,7 +17,7 @@ const ManagerRecord = () => {
         const fetchRecords = async () => {
             try {
                 // สมมติว่าสร้าง API นี้ไว้ที่ Backend เพื่อดึงข้อมูลงานทั้งหมด
-                const res = await axios.get('http://192.168.1.106:3000/api/manager/work-records');
+                const res = await axios.get('http://192.168.1.93:3000/api/manager/work-records');
                 setRecords(res.data);
                 setFilteredRecords(res.data);
                 setLoading(false);

@@ -3,8 +3,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { ShoppingCart, DollarSign, ArrowUp, ClipboardList, CheckCircle, Clock } from 'lucide-react';
+import { Dropdown, Badge } from 'react-bootstrap';
 
-const API_URL = 'http://192.168.1.106:3000';
+const API_URL = 'http://192.168.1.93:3000';
 
 const AdminDashboard = () => {
   const [works, setWorks] = useState([]);
@@ -25,6 +26,25 @@ const AdminDashboard = () => {
     };
     fetchWorks();
   }, []);
+
+  // 1. เพิ่ม state เพื่อเก็บไอดีของงานที่ถูกปัดทิ้งไปแล้ว
+  const [dismissedNotifications, setDismissedNotifications] = useState(() => {
+    const saved = localStorage.getItem('dismissedWorks');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // 2. กรองเฉพาะงานที่ "เสร็จสิ้น" และ "ยังไม่ถูกปัดทิ้ง"
+  const activeNotifications = works.filter(w =>
+    w.status === 'เสร็จสิ้น' && !dismissedNotifications.includes(w.work_id)
+  );
+
+  // 3. ฟังก์ชันสำหรับปัดทิ้ง
+  const handleDismiss = (e, workId) => {
+    e.stopPropagation(); // กันไม่ให้ Dropdown ปิด
+    const updated = [...dismissedNotifications, workId];
+    setDismissedNotifications(updated);
+    localStorage.setItem('dismissedWorks', JSON.stringify(updated));
+  };
 
   // นับสถิติจาก database
   const totalWorks = works.length;
@@ -68,25 +88,43 @@ const AdminDashboard = () => {
           <p className="text-muted small">ภาพรวมสถิติใบงานทั้งหมดในระบบ</p>
         </div>
 
-        {/* Notification Bell */}
-        <div className="position-relative">
-          <button
-            className="btn btn-light position-relative shadow-sm border"
-            onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-          >
-            <i className="bi bi-bell-fill text-secondary"></i>
-          </button>
+        {/* ตัวอย่างส่วนแสดง Notification Dropdown */}
+        <Dropdown show={showNotificationDropdown} onToggle={() => setShowNotificationDropdown(!showNotificationDropdown)}>
+          <Dropdown.Toggle variant="link" className="text-dark position-relative">
+            <i className="bi bi-bell"></i>
+            {activeNotifications.length > 0 && (
+              <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle">
+                {activeNotifications.length}
+              </Badge>
+            )}
+          </Dropdown.Toggle>
 
-          {showNotificationDropdown && (
-            <div className="position-absolute end-0 mt-2 bg-white rounded shadow-lg border"
-              style={{ width: '350px', maxHeight: '500px', overflowY: 'auto', zIndex: 1000 }}>
-              <div className="p-3 border-bottom bg-light">
-                <h6 className="mb-0 fw-bold text-dark">การแจ้งเตือน</h6>
-              </div>
-              <div className="p-3 text-center text-muted small">ไม่มีการแจ้งเตือนใหม่</div>
+          <Dropdown.Menu align="end" className="p-0 shadow" style={{ width: '300px' }}>
+            <div className="p-2 border-bottom fw-bold bg-light">การแจ้งเตือน ({activeNotifications.length})</div>
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {activeNotifications.length > 0 ? (
+                activeNotifications.map(work => (
+                  <Dropdown.Item key={work.work_id} className="border-bottom py-2">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="small fw-bold">งานเสร็จสิ้นแล้ว!</div>
+                        <div className="text-muted small">ID: {work.work_id} - {work.title || 'ไม่มีชื่อหัวข้อ'}</div>
+                      </div>
+                      <button
+                        className="btn btn-sm btn-outline-secondary border-0"
+                        onClick={(e) => handleDismiss(e, work.work_id)}
+                      >
+                        <i className="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  </Dropdown.Item>
+                ))
+              ) : (
+                <div className="text-center py-3 text-muted small">ไม่มีการแจ้งเตือนใหม่</div>
+              )}
             </div>
-          )}
-        </div>
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
 
       {/* Stats Cards */}

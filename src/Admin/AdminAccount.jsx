@@ -2,7 +2,7 @@ import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } fro
 import { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.1.106:3000/api';
+const BASE_URL = 'http://192.168.1.93:3000/api';
 
 const AdminAccount = () => {
   const [users, setUsers] = useState([]);
@@ -82,28 +82,28 @@ const AdminAccount = () => {
     setImagePreview(null);
     setSelectedRole('technician');
   };
+  
   const handleShow = () => setShow(true);
 
-// ในไฟล์ AdminAccount.jsx
-useEffect(() => {
-  if (show && editMode && editingUser) {
-    setTimeout(() => {
-      if (nameRef.current) nameRef.current.value = editingUser.name || '';
-      if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
-      if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
-      if (emailRef.current) emailRef.current.value = editingUser.email || '';
-      
-      // แก้ไขตรงนี้: เปลี่ยนจาก type เป็น type
-      if (typeRef.current) typeRef.current.value = editingUser.type || ''; 
-      
-      if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
-      if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
-      if (editingUser.role) setSelectedRole(editingUser.role);
-    }, 100);
-  } else if (show && !editMode) {
-    setImagePreview(null);
-  }
-}, [show, editMode, editingUser]);
+  
+
+  // ในไฟล์ AdminAccount.jsx
+  useEffect(() => {
+    if (show && editMode && editingUser) {
+      setTimeout(() => {
+        if (nameRef.current) nameRef.current.value = editingUser.name || '';
+        if (nicknameRef.current) nicknameRef.current.value = editingUser.nickname || '';
+        if (phoneRef.current) phoneRef.current.value = editingUser.phone || '';
+        if (emailRef.current) emailRef.current.value = editingUser.email || '';
+        if (typeRef.current) typeRef.current.value = editingUser.type || ''; 
+        if (expertiseRef.current) expertiseRef.current.value = editingUser.expertise || '';
+        if (incomeRef.current) incomeRef.current.value = editingUser.income || '';
+        if (editingUser.role) setSelectedRole(editingUser.role);
+      }, 100);
+    } else if (show && !editMode) {
+      setImagePreview(null);
+    }
+  }, [show, editMode, editingUser]);
 
   const filteredUsers = useMemo(() => {
     const filtered = users.filter((user) => {
@@ -149,111 +149,70 @@ useEffect(() => {
     }
   };
 
-
-  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข)
+  // ฟังก์ชันสำหรับบันทึกข้อมูล (เพิ่ม/แก้ไข) ที่ได้รับการแก้ไขแล้ว
   const handleSave = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const payload = {
-    name: nameRef.current?.value,
-    nickname: nicknameRef.current?.value,
-    phone: phoneRef.current?.value,
-    email: emailRef.current?.value,
-    role: selectedRole,
-    type: typeRef.current?.value,
-    expertise: expertiseRef.current?.value,
-    salary: incomeRef.current?.value || 0,
-  };
+    const name = nameRef.current?.value?.trim();
+    const nickname = nicknameRef.current?.value?.trim();
+    const phone = phoneRef.current?.value?.trim();
+    const email = emailRef.current?.value?.trim();
+    const typework = typeRef.current?.value; // แก้จาก typeWorkRef เป็น typeRef
+    const expertise = expertiseRef.current?.value?.trim();
+    const income = parseFloat(incomeRef.current?.value) || 0;
+    const username = usernameRef.current?.value?.trim();
 
-  try {
-    if (editMode) {
-      // แก้ไขข้อมูล (ไม่ต้องยุ่งกับรหัสผ่าน)
-      await axios.put(`${BASE_URL}/users/${editingUser.id}`, payload);
-      alert('แก้ไขข้อมูลสำเร็จ!');
-    } else {
-      // เพิ่มข้อมูลใหม่
-      const registerPayload = {
-        ...payload,
-        username: usernameRef.current?.value,
-        password: 'password123', // <--- ตั้งรหัสผ่านเริ่มต้นตรงนี้ (เช่น password123)
-      };
-
-<<<<<<< Updated upstream
-      if (!registerPayload.username) {
-        return alert("กรุณากรอก Username");
-=======
-  const saveClicked = async () => {
-    const name = nameRef.current.value.trim();
-    const nickname = nicknameRef.current.value.trim();
-    const phone = phoneRef.current.value.trim();
-    const email = emailRef.current.value.trim();
-    const typework = typeWorkRef.current.value;
-    const expertise = expertiseRef.current.value.trim();
-    const income = parseFloat(incomeRef.current.value) || 0;
-    const role = selectedRole;
-
-    if (!name) { alert('กรุณากรอกชื่อช่าง'); return; }
+    if (!name) { alert('กรุณากรอกชื่อ-นามสกุล'); return; }
     if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
     if (!typework) { alert('กรุณาเลือกประเภทงาน'); return; }
 
-    const userData = {
+    const payload = {
       name,
       nickname,
       phone,
       email,
-      typework,
+      role: selectedRole,
+      type: typework,
       expertise,
-      role,
       salary: income,
-      // profileImage: imagePreview
     };
 
-    if (editMode && editingUser) {
-      try {
+    try {
+      if (editMode && editingUser) {
         const currentId = editingUser.id || editingUser.user_id;
 
-        const userRes = await fetch(`${BASE_URL}/users/${currentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        });
+        // แก้ไขข้อมูลส่วนตัว
+        await axios.put(`${BASE_URL}/users/${currentId}`, payload);
 
-        if (!userRes.ok) throw new Error('ไม่สามารถบันทึกข้อมูลส่วนตัวได้');
+        // แยกอัปเดตเงินเดือน
+        try {
+          await axios.put(`http://192.168.1.93:3000/salary/${currentId}`, { salary: income });
+        } catch (salaryErr) {
+          console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน:', salaryErr);
+        }
+        
+        alert('แก้ไขข้อมูลสำเร็จ!');
+      } else {
+        // เพิ่มช่างใหม่
+        if (!username) { alert('กรุณาตั้ง Username ให้ช่างใหม่'); return; }
 
-        const salaryRes = await fetch(`http://192.168.1.106:3000/salary/${currentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ salary: income }),
-        });
+        const registerPayload = {
+          ...payload,
+          username: username,
+          password: 'password123', // รหัสผ่านเริ่มต้น
+        };
 
-        if (!salaryRes.ok) console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน');
-
-        setUsers(users.map(user =>
-          (user.id === currentId || user.user_id === currentId)
-            ? { ...user, ...userData, income }
-            : user
-        ));
-
-        alert('อัปเดตข้อมูลสำเร็จ!');
-
-      } catch (err) {
-        console.error('Update error:', err);
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
-        return;
->>>>>>> Stashed changes
+        await axios.post(`${BASE_URL}/users/register`, registerPayload);
+        alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
       }
 
-      await axios.post(`${BASE_URL}/users/register`, registerPayload);
-      alert('เพิ่มช่างสำเร็จ! (รหัสผ่านเริ่มต้นคือ: password123)');
+      setShow(false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
     }
-    
-    setShow(false);
-    window.location.reload();
-  } catch (error) {
-    console.error("Error saving data:", error);
-    alert('เกิดข้อผิดพลาด: ' + (error.response?.data?.message || error.message));
-  }
-};
+  };
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -387,17 +346,16 @@ useEffect(() => {
                     <option value="supervisor">👑 หัวหน้าช่าง (Supervisor)</option>
                   </Form.Select>
                 </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Username
-                    <span
-                      className="text-danger">*
-                    </span></Form.Label>
-                  <Form.Control
-                    ref={usernameRef}
-                    placeholder="ตั้งชื่อผู้ใช้ให้ช่าง"
-                    required
-                  />
-                </Form.Group>
+                {!editMode && (
+                  <Form.Group className="mt-3">
+                    <Form.Label>Username <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                      ref={usernameRef}
+                      placeholder="ตั้งชื่อผู้ใช้ให้ช่าง"
+                      required
+                    />
+                  </Form.Group>
+                )}
               </Col>
             </Row>
           </Form>
@@ -514,13 +472,6 @@ useEffect(() => {
                           <td><Badge bg="secondary">{user.id}</Badge></td>
                           <td className="text-start ps-4 fw-semibold">
                             <div className="d-flex align-items-center gap-2">
-                              {/* {user.profileImage ? (
-                                <img src={user.profileImage} alt="" className="rounded-circle border" style={{ width: '32px', height: '32px', objectFit: 'cover' }} />
-                              ) : (
-                                <div className="rounded-circle bg-light border d-flex align-items-center justify-content-center text-secondary" style={{ width: '32px', height: '32px' }}>
-                                  <i className="bi bi-person-fill"></i>
-                                </div>
-                              )} */}
                               <div>{user.name}</div>
                             </div>
                           </td>
