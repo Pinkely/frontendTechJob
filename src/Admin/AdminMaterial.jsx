@@ -37,7 +37,7 @@ const AdminMaterial = () => {
     // ==========================================
     const fetchMaterials = async () => {
         try {
-            const response = await axios.get('http://192.168.1.93:3000/api/materials');
+            const response = await axios.get('http://192.168.1.106:3000/api/materials');
             setMaterials(response.data);
         } catch (error) {
             console.error("ดึงข้อมูลวัสดุไม่สำเร็จ:", error);
@@ -47,7 +47,7 @@ const AdminMaterial = () => {
     // เพิ่มฟังก์ชันดึงข้อมูลรายการเบิก
     const fetchRequests = async () => {
         try {
-            const response = await axios.get('http://192.168.1.93:3000/api/materials/requests');
+            const response = await axios.get('http://192.168.1.106:3000/api/materials/requests');
             setRequests(response.data);
         } catch (error) {
             console.error("ดึงข้อมูลคำขอเบิกไม่สำเร็จ:", error);
@@ -71,9 +71,9 @@ const AdminMaterial = () => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put(`http://192.168.1.93:3000/api/materials/${formData.material_id}`, formData);
+                await axios.put(`http://192.168.1.106:3000/api/materials/${formData.material_id}`, formData);
             } else {
-                await axios.post('http://192.168.1.93:3000/api/materials/add', formData);
+                await axios.post('http://192.168.1.106:3000/api/materials/add', formData);
             }
             fetchMaterials();
             handleClose();
@@ -100,7 +100,7 @@ const AdminMaterial = () => {
     const handleDelete = async (id) => {
         if (window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบวัสดุนี้?")) {
             try {
-                await axios.delete(`http://192.168.1.93:3000/api/materials/${id}`);
+                await axios.delete(`http://192.168.1.106:3000/api/materials/${id}`);
                 fetchMaterials();
             } catch (error) {
                 console.error("ลบข้อมูลไม่สำเร็จ:", error);
@@ -113,7 +113,7 @@ const AdminMaterial = () => {
     const handleUpdateStatus = async (requestId, status) => {
         if (window.confirm(`ต้องการ "${status}" คำขอนี้ใช่หรือไม่?`)) {
             try {
-                await axios.patch(`http://192.168.1.93:3000/api/materials/request/${requestId}/approve`, {
+                await axios.patch(`http://192.168.1.106:3000/api/materials/request/${requestId}/approve`, {
                     status: status,
                     admin_id: 1
                 });

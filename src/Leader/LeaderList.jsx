@@ -46,7 +46,7 @@ const LeaderList = () => {
     const [typeFilter, setTypeFilter] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:3000/technicians')
+        fetch('http://192.168.1.106:3000/technicians')
             .then(res => {
                 if (!res.ok) throw new Error('Server error');
                 return res.json();

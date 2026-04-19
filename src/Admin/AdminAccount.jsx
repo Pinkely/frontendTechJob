@@ -1,7 +1,7 @@
 import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } from 'react-bootstrap';
 import { useState, useEffect, useRef, useMemo } from 'react';
 
-const BASE_URL = 'http://192.168.1.93:3000/api';
+const BASE_URL = 'http://192.168.1.106:3000/api';
 
 const AdminAccount = () => {
   const [users, setUsers] = useState([]);
@@ -203,7 +203,7 @@ const AdminAccount = () => {
 
         if (!userRes.ok) throw new Error('ไม่สามารถบันทึกข้อมูลส่วนตัวได้');
 
-        const salaryRes = await fetch(`http://192.168.1.93:3000/salary/${currentId}`, {
+        const salaryRes = await fetch(`http://192.168.1.106:3000/salary/${currentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ salary: income }),
