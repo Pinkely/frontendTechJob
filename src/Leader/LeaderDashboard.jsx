@@ -116,11 +116,11 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
             .catch(err => console.error("Error fetching technicians:", err));
     }, []);
 
-    const handleTechToggle = (techName) => {
+    const handleTechToggle = (tech) => {
         setAssignTechs(prev =>
-            prev.includes(techName)
-                ? prev.filter(name => name !== techName)
-                : [...prev, techName]
+            prev.some(t => (t.technician_id || t.id) === (tech.technician_id || tech.id))
+                ? prev.filter(t => (t.technician_id || t.id) !== (tech.technician_id || tech.id))
+                : [...prev, tech]
         );
     };
 
@@ -319,8 +319,8 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                                                     {technicians.map(emp => (
                                                         <div key={emp.technician_id || emp.id} className="form-check mb-2">
                                                             <input className="form-check-input" type="checkbox" id={`tech-${emp.technician_id || emp.id}`}
-                                                                checked={assignTechs.includes(emp.name)}
-                                                                onChange={() => handleTechToggle(emp.name)}
+                                                                checked={assignTechs.some(t => (t.technician_id || t.id) === (emp.technician_id || emp.id))}
+                                                                onChange={() => handleTechToggle(emp)}
                                                                 disabled={emp.status === "ลา"} />
                                                             <label className="form-check-label" htmlFor={`tech-${emp.technician_id || emp.id}`}
                                                                 style={{ color: emp.status === "ลา" ? "#dc3545" : "#212529" }}>
@@ -334,13 +334,39 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                                         </div>
                                         <Button className="w-100 btn-gradient fw-bold mt-auto py-2"
                                             disabled={assignTechs.length === 0}
-                                            onClick={() => {
-                                                const updatedTasks = tasks.map(t => t.id === selectedWork.id ?
-                                                    { ...t, technicianName: assignTechs.join(", "), status: "Assigned" } : t);
-                                                setTasks(updatedTasks);
-                                                alert("มอบหมายงานเรียบร้อยแล้ว");
-                                                setAssignTechs([]);
-                                                setSelectedWork(null);
+                                            onClick={async () => {
+                                                try {
+                                                    const workId = selectedWork.id;
+                                                    
+                                                    // 1. อัปเดตสถานะงานหลักเป็น 'Assigned'
+                                                    await fetch(`http://localhost:3000/works/${workId}/status`, {
+                                                        method: 'PATCH',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ status: 'Assigned' })
+                                                    });
+
+                                                    // 2. มอบหมายงานให้ช่างแต่ละคน (บันทึกลง work_assign)
+                                                    for (const tech of assignTechs) {
+                                                        const techId = tech.technician_id || tech.id;
+                                                        await fetch(`http://localhost:3000/works/assign/${workId}`, {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ technician_id: techId })
+                                                        });
+                                                    }
+
+                                                    const techNames = assignTechs.map(t => t.name).join(", ");
+                                                    const updatedTasks = tasks.map(t => t.id === workId ?
+                                                        { ...t, technicianName: techNames, status: "Assigned" } : t);
+                                                    
+                                                    setTasks(updatedTasks);
+                                                    alert("มอบหมายงานเรียบร้อยแล้ว");
+                                                    setAssignTechs([]);
+                                                    setSelectedWork(null);
+                                                } catch (error) {
+                                                    console.error("❌ Error assigning work:", error);
+                                                    alert("เกิดข้อผิดพลาดในการมอบหมายงาน");
+                                                }
                                             }}>
                                             ยืนยันส่งงาน
                                         </Button>

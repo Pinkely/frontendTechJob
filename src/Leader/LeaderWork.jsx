@@ -1,13 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Button, Badge } from 'react-bootstrap';
 import "./leader.css";
 
-const LeaderWork = ({ tasks, setTasks }) => {
+const getSupervisorId = () => {
+    try {
+        const userStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            if (user.supervisor_id) return Number(user.supervisor_id);
+            if (user.id) return Number(user.id);
+        }
+    } catch (e) { }
+    return null;
+};
+
+const LeaderWork = ({ tasks: propTasks, setTasks: setPropTasks }) => {
+    const [localTasks, setLocalTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedJob, setSelectedJob] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
-    // กรองเฉพาะงานที่สถานะเป็น "PendingInspection" (รอตรวจสอบ)
-    const pendingJobs = tasks.filter(task => task.status === 'PendingInspection');
+    const supervisorId = useMemo(() => getSupervisorId(), []);
+
+    // Fetch works that need inspection
+    useEffect(() => {
+        if (!supervisorId) return;
+        setLoading(true);
+        fetch(`http://localhost:3000/works/supervisor/${supervisorId}/pending-inspection`)
+            .then(res => res.json())
+            .then(data => {
+                const works = data.works || [];
+                const mapped = works.map(w => ({
+                    id: w.work_id || w.id,
+                    namework: w.job_name || w.namework,
+                    detail: w.job_detail || w.detail,
+                    role: w.location || w.role,
+                    status: w.status,
+                    technicianName: w.technicianName,
+                    beforeImage: w.before_image ? `http://localhost:3000/uploads/${w.before_image}` : null,
+                    afterImage: w.after_image ? `http://localhost:3000/uploads/${w.after_image}` : null,
+                    otherImage: w.other_image ? `http://localhost:3000/uploads/${w.other_image}` : null,
+                    issues: w.work_note,
+                    materials: w.materials_used,
+                    finishDate: w.finishDate
+                }));
+                setLocalTasks(mapped);
+            })
+            .catch(err => console.error("❌ Error fetching pending inspection:", err))
+            .finally(() => setLoading(false));
+    }, [supervisorId]);
+
+    // Use local tasks if we are managing them here, otherwise propTasks
+    const displayTasks = localTasks;
 
     // ฟังก์ชันสำหรับดูรายละเอียด
     const handleInspect = (job) => {
@@ -16,24 +60,26 @@ const LeaderWork = ({ tasks, setTasks }) => {
     };
 
     // ฟังก์ชัน อนุมัติ (Approved) หรือ ส่งแก้ (Revision)
-    const updateStatus = (status, jobID) => {
-        const updatedTasks = tasks.map(t => {
-            if (t.id === jobID) {
-                return {
-                    ...t,
-                    status: status,
-                    completed: status === 'Approved' ? true : false,
-                    checkedBy: 'Leader',
-                    checkedDate: new Date().toISOString()
-                };
-            }
-            return t;
-        });
+    const updateStatus = async (status, jobID) => {
+        try {
+            const finalStatus = status === 'Approved' ? 'เสร็จสิ้น' : 'ส่งกลับแก้ไข';
+            
+            await fetch(`http://localhost:3000/works/${jobID}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: finalStatus })
+            });
 
-        setTasks(updatedTasks);
-        setShowModal(false);
-        alert(status === 'Approved' ? '✅ อนุมัติงานเรียบร้อย' : '⚠️ ส่งกลับแก้ไขเรียบร้อย');
+            // Update local state
+            setLocalTasks(prev => prev.filter(t => t.id !== jobID));
+            setShowModal(false);
+            alert(status === 'Approved' ? '✅ อนุมัติงานเรียบร้อย' : '⚠️ ส่งกลับแก้ไขเรียบร้อย');
+        } catch (error) {
+            console.error("Error updating status:", error);
+            alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
+        }
     };
+
 
     return (
         <div className="container-fluid py-5" style={{ marginLeft: '14rem', backgroundColor: '#f4f4f5', minHeight: '100vh' }}>
@@ -46,9 +92,14 @@ const LeaderWork = ({ tasks, setTasks }) => {
                 </div>
 
                 {/* แสดงรายการงานที่รอตรวจสอบ */}
-                {pendingJobs.length > 0 ? (
+                {loading ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status"></div>
+                        <p className="mt-2 text-muted">กำลังโหลดข้อมูลงานจากช่าง...</p>
+                    </div>
+                ) : displayTasks.length > 0 ? (
                     <div className="row g-4">
-                        {pendingJobs.map(job => (
+                        {displayTasks.map(job => (
                             <div key={job.id} className="col-md-6 col-lg-4">
                                 <div className="glass-card p-4 h-100 d-flex flex-column hover-lift">
                                     <div className="d-flex justify-content-between mb-3">
