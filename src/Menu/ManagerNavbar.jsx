@@ -17,9 +17,9 @@ const ManagerNavbar = ({ onLogout }) => {
     }
 
     const menus = [
-        { to: '/manager/dashboard', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
-        { to: '/manager/users',     icon: <Users            size={17} />, label: 'Users' },
-        { to: '/manager/reports',   icon: <BarChart2        size={17} />, label: 'Reports' },
+        { to: '/manager', icon: <LayoutDashboard size={17} />, label: 'Dashboard' },
+        { to: '/manager-account',     icon: <Users            size={17} />, label: 'Users' },
+        { to: '/manager-record',   icon: <BarChart2        size={17} />, label: 'Reports' },
     ]
 
     return (
