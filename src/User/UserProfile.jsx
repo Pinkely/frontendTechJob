@@ -24,7 +24,7 @@ const fetchUserData = async () => {
     }
 
     // แก้ไข URL ให้มี /api นำหน้า (ตามที่ระบุในไฟล์ Route)
-    const response = await axios.get(`http://localhost:3000/api/users/${userId}`);
+    const response = await axios.get(`http://172.26.48.124:3000/api/users/${userId}`);
 
     if (response.data) {
       // ตรวจสอบโครงสร้างข้อมูลที่ UserController ส่งกลับมา

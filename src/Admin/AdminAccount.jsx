@@ -2,7 +2,7 @@ import { Form, Button, Dropdown, Badge, Modal, Table, Row, Col, InputGroup } fro
 import { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.1.93:3000/api';
+const BASE_URL = 'http://172.26.48.124:3000/api';
 
 const AdminAccount = () => {
   const [users, setUsers] = useState([]);
@@ -164,7 +164,7 @@ const AdminAccount = () => {
 
     if (!name) { alert('กรุณากรอกชื่อ-นามสกุล'); return; }
     if (income <= 0) { alert('กรุณากรอกรายได้ที่ถูกต้อง'); return; }
-    if (!type) { alert('กรุณาเลือกประเภทงาน'); return; }
+    if (!typework) { alert('กรุณาเลือกประเภทงาน'); return; }
 
     const payload = {
       name,
@@ -186,7 +186,7 @@ const AdminAccount = () => {
 
         // แยกอัปเดตเงินเดือน
         try {
-          await axios.put(`http://192.168.1.93:3000/salary/${currentId}`, { salary: income });
+          await axios.put(`http://172.26.48.124:3000/salary/${currentId}`, { salary: income });
         } catch (salaryErr) {
           console.error('เกิดข้อผิดพลาดในการอัปเดตเงินเดือน:', salaryErr);
         }

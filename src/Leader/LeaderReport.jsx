@@ -33,7 +33,7 @@ export default function LeaderReport() {
             setLoading(false);
             return;
         }
-        fetch(`http://localhost:3000/works/supervisor/${supervisorId}`)
+        fetch(`http://172.26.48.124:3000/api/works/supervisor/${supervisorId}`)
             .then(res => res.json())
             .then(data => {
                 const works = Array.isArray(data) ? data : (data.works || []);

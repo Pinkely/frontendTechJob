@@ -19,7 +19,7 @@ const Settings = () => {
     confirmPassword: ''
   });
 
-  const SERVER_URL = 'http://192.168.1.106:3000';
+  const SERVER_URL = 'http://172.26.48.124:3000';
   const API_BASE_URL = `${SERVER_URL}/api/manager`;
 
   useEffect(() => {

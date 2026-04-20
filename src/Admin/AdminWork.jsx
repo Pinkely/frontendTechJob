@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button, Form, Dropdown, Table, Badge, InputGroup } from 'react-bootstrap';
 import Modal from 'react-bootstrap/Modal';
 
-const API_URL = 'http://192.168.1.93:3000/api';
+const API_URL = 'http://172.26.48.124:3000/api';
 
 const AdminWork = () => {
   const [works, setWorks] = useState([]);
@@ -24,11 +24,6 @@ const AdminWork = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [supervisorId, setSupervisorId] = useState('');
-
-  // --- Map ---
-  const [showMap, setShowMap] = useState(false);
-  const [mapLocation, setMapLocation] = useState({ lat: 13.7563, lng: 100.5018 });
-  const [addressInput, setAddressInput] = useState('');
 
   // --- Filter ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +81,6 @@ const AdminWork = () => {
   const handleShow = () => {
     setIsEditMode(false);
     setSelectedWorkType('');
-    setAddressInput('');
     setSupervisorId('');
     setMapLocation({ lat: 13.7563, lng: 100.5018 });
     setShow(true);
@@ -96,7 +90,6 @@ const AdminWork = () => {
     setIsEditMode(true);
     setEditingId(work.work_id);
     setSelectedWorkType(work.job_type || '');
-    setAddressInput(work.location || '');
     setSupervisorId(work.supervisor_id ? String(work.supervisor_id) : '');
     setMapLocation({ lat: 13.7563, lng: 100.5018 });
     setShow(true);
@@ -132,8 +125,6 @@ const AdminWork = () => {
     }
   };
 
-  const handleOpenMap = () => setShowMap(true);
-  const handleCloseMap = () => setShowMap(false);
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -150,12 +141,6 @@ const AdminWork = () => {
     }
   };
 
-  const handleSaveMapLocation = () => {
-    if (!addressInput) {
-      setAddressInput(`พิกัด: ${mapLocation.lat.toFixed(6)}, ${mapLocation.lng.toFixed(6)}`);
-    }
-    handleCloseMap();
-  };
 
   const saveWork = async () => {
     const job_name = nameWorkRef.current?.value.trim();
@@ -306,7 +291,7 @@ const AdminWork = () => {
               <div className="col-md-6"><Form.Group className="mb-3"><Form.Label>สถานะ</Form.Label><Form.Control value="รอดำเนินการ" readOnly className="bg-light text-muted" /></Form.Group></div>
             </div>
             <Form.Group className="mb-3"><Form.Label>รายละเอียดงาน <span className="text-danger">*</span></Form.Label><Form.Control ref={detailRef} as="textarea" rows={3} placeholder="อธิบายรายละเอียด" /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>สถานที่ / จุดปักหมุด <span className="text-danger">*</span></Form.Label><InputGroup><Button variant="outline-danger" onClick={handleOpenMap}><i className="bi bi-geo-alt-fill me-1"></i> ปักหมุด</Button><Form.Control value={addressInput} onChange={(e) => setAddressInput(e.target.value)} placeholder="ระบุสถานที่ หรือ กดปักหมุดเพื่อระบุพิกัด" /></InputGroup></Form.Group>
+            <Form.Group className="mb-3"><Form.Label>สถานที่</Form.Label><InputGroup><Form.Control placeholder="ระบุสถานที่" /></InputGroup></Form.Group>
             <div className="row">
               <div className="col-md-6"><Form.Group className="mb-3"><Form.Label>ชื่อลูกค้า <span className="text-danger">*</span></Form.Label><Form.Control ref={nameCustomerRef} type="text" placeholder="ระบุชื่อลูกค้า" /></Form.Group></div>
               <div className="col-md-6"><Form.Group className="mb-3"><Form.Label>ราคางาน (บาท)</Form.Label><Form.Control ref={jobPriceRef} type="number" min="0" step="0.01" placeholder="0.00" /></Form.Group></div>
@@ -392,7 +377,7 @@ const AdminWork = () => {
                           <th>ค่าวัสดุ</th>
                           <th>ค่าใช้จ่ายอื่น</th>
                           <th>รวม</th>
-                          <th>รายได้</th>
+                          {/* <th>รายได้</th> */}
                           <th>กำไร</th>
                         </tr>
                       </thead>
@@ -404,7 +389,7 @@ const AdminWork = () => {
                             <td>{Number(exp.material_cost || 0).toLocaleString()}</td>
                             <td>{Number(exp.other_cost || 0).toLocaleString()}</td>
                             <td className="fw-semibold">{Number(exp.total_cost || 0).toLocaleString()}</td>
-                            <td className="text-success fw-semibold">{Number(exp.job_price || 0).toLocaleString()}</td>
+                            {/* <td className="text-success fw-semibold">{Number(exp.job_price || 0).toLocaleString()}</td> */}
                             <td className={`fw-bold ${Number(exp.profit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
                               {Number(exp.profit || 0).toLocaleString()}
                             </td>
@@ -417,7 +402,7 @@ const AdminWork = () => {
                           <td>{expenses.reduce((s, e) => s + Number(e.material_cost || 0), 0).toLocaleString()}</td>
                           <td>{expenses.reduce((s, e) => s + Number(e.other_cost || 0), 0).toLocaleString()}</td>
                           <td>{expenses.reduce((s, e) => s + Number(e.total_cost || 0), 0).toLocaleString()}</td>
-                          <td className="text-success">{expenses.reduce((s, e) => s + Number(e.job_price || 0), 0).toLocaleString()}</td>
+                          {/* <td className="text-success">{expenses.reduce((s, e) => s + Number(e.job_price || 0), 0).toLocaleString()}</td> */}
                           <td className={expenses.reduce((s, e) => s + Number(e.profit || 0), 0) >= 0 ? 'text-success' : 'text-danger'}>
                             {expenses.reduce((s, e) => s + Number(e.profit || 0), 0).toLocaleString()}
                           </td>

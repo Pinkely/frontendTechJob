@@ -21,7 +21,7 @@ const ManagerDashboard = () => {
         const fetchDashboard = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://192.168.1.106:3000/api/manager/financial-report?year=${selectedYear}`);
+                const res = await axios.get(`http://172.26.48.124:3000/api/manager/financial-report?year=${selectedYear}`);
                 if (Array.isArray(res.data)) {
                     setFinancialData(res.data);
                 } else {

@@ -4,7 +4,7 @@ import { Upload, Send, MapPin, Clock, FileText, Camera, CheckCircle, Download, P
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://172.26.48.124:3000';
 
 const JobPostingForm = () => {
   const location  = useLocation();
@@ -204,18 +204,16 @@ const JobPostingForm = () => {
   // ══════════════════════════════════════════════════════════════════════════════
   // handleSubmit — แก้บั๊ก 500 + รองรับลายเซ็น
   // ══════════════════════════════════════════════════════════════════════════════
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
     const session = getSession();
     const workId  = workData?.work_id || workData?.id;
     const userId  = session?.id || session?.user_id;
 
-    
     if (!workId || !userId) {
       alert('ไม่พบข้อมูลงานหรือผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
       return;
     }
 
-    // ตรวจว่ามีลายเซ็น
     if (!hasSignature) {
       alert('⚠️ กรุณาลงลายเซ็นก่อนส่งงาน');
       setCurrentStep(3);
@@ -224,7 +222,12 @@ const JobPostingForm = () => {
 
     setIsSubmitting(true);
     try {
-      // ── Step 1: อัปเดตสถานะ + บันทึก work_report ─────────────────────────────
+      // ✅ กรองเฉพาะวัสดุที่ถูกเลือกและมีจำนวนมากกว่า 0
+      const materialsList = selectedItems
+        .filter(item => item.material_id && item.qty > 0)
+        .map(item => ({ material_id: item.material_id, qty: item.qty }));
+
+      // ── Step 1: อัปเดตสถานะ + บันทึก work_report + ส่งข้อมูลวัสดุ ─────────────────────────────
       const statusRes = await fetch(
         `${API_BASE}/api/works/${workId}/assign/${userId}/status`,
         {
@@ -233,7 +236,8 @@ const JobPostingForm = () => {
           body   : JSON.stringify({
             status        : 'PendingInspection',
             work_note     : formData.issues,
-            materials_used: getMaterialsUsedString(),
+            materials_used: getMaterialsUsedString(), // เก็บเป็น Text ไว้ดูง่ายๆ แบบเดิม
+            materials_list: materialsList,            // ✅ เพิ่มชุดข้อมูล Array สำหรับให้ Backend ไปตัดสต็อก
             finish_time   : formData.startDate,
           }),
         }

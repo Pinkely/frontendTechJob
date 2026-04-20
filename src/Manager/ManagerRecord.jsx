@@ -25,7 +25,7 @@ const ManagerRecord = () => {
     useEffect(() => {
         const fetchRecords = async () => {
             try {
-                const res = await axios.get('http://192.168.1.106:3000/api/manager/work-records');
+                const res = await axios.get('http://172.26.48.124:3000/api/manager/work-records');
                 setRecords(res.data);
                 setFilteredRecords(res.data);
                 setLoading(false);

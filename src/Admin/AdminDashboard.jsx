@@ -5,7 +5,7 @@ import {
 import { ShoppingCart, DollarSign, ArrowUp, ClipboardList, CheckCircle, Clock } from 'lucide-react';
 import { Dropdown, Badge } from 'react-bootstrap';
 
-const API_URL = 'http://192.168.1.93:3000';
+const API_URL = 'http://172.26.48.124:3000';
 
 const AdminDashboard = () => {
   const [works, setWorks] = useState([]);

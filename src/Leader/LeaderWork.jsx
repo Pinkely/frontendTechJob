@@ -26,7 +26,7 @@ const LeaderWork = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     useEffect(() => {
         if (!supervisorId) return;
         setLoading(true);
-        fetch(`http://localhost:3000/works/supervisor/${supervisorId}/pending-inspection`)
+        fetch(`http://172.26.48.124:3000/api/works/supervisor/${supervisorId}/pending-inspection`)
             .then(res => res.json())
             .then(data => {
                 const works = data.works || [];
@@ -37,9 +37,9 @@ const LeaderWork = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                     role: w.location || w.role,
                     status: w.status,
                     technicianName: w.technicianName,
-                    beforeImage: w.before_image ? `http://localhost:3000/uploads/${w.before_image}` : null,
-                    afterImage: w.after_image ? `http://localhost:3000/uploads/${w.after_image}` : null,
-                    otherImage: w.other_image ? `http://localhost:3000/uploads/${w.other_image}` : null,
+                    beforeImage: w.before_image ? `http://172.26.48.124:3000/uploads/${w.before_image}` : null,
+                    afterImage: w.after_image ? `http://172.26.48.124:3000/uploads/${w.after_image}` : null,
+                    otherImage: w.other_image ? `http://172.26.48.124:3000/uploads/${w.other_image}` : null,
                     issues: w.work_note,
                     materials: w.materials_used,
                     finishDate: w.finishDate
@@ -62,12 +62,13 @@ const LeaderWork = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // ฟังก์ชัน อนุมัติ (Approved) หรือ ส่งแก้ (Revision)
     const updateStatus = async (status, jobID) => {
         try {
+            // โค้ดเดิมใน LeaderWork.jsx ของคุณ
             const finalStatus = status === 'Approved' ? 'เสร็จสิ้น' : 'ส่งกลับแก้ไข';
-            
-            await fetch(`http://localhost:3000/works/${jobID}/status`, {
+
+            await fetch(`http://172.26.48.124:3000/api/works/${jobID}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: finalStatus })
+                body: JSON.stringify({ status: finalStatus }) // ส่ง 'เสร็จสิ้น' ไป
             });
 
             // Update local state
@@ -165,19 +166,19 @@ const LeaderWork = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                             <div className="col-md-4">
                                 <label className="d-block fw-bold text-center mb-2 small text-muted">รูปก่อนทำ</label>
                                 <div className="rounded-3 overflow-hidden border">
-                                    <img src={selectedJob.beforeImage || 'https://via.placeholder.com/300x200?text=Before'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="Before" />
+                                    <img src={selectedJob.beforeImage || 'https://placehold.co/300x200?text=Before'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="Before" />
                                 </div>
                             </div>
                             <div className="col-md-4">
                                 <label className="d-block fw-bold text-center mb-2 small text-muted">รูปหลังทำ</label>
                                 <div className="rounded-3 overflow-hidden border">
-                                    <img src={selectedJob.afterImage || 'https://via.placeholder.com/300x200?text=After'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="After" />
+                                    <img src={selectedJob.afterImage || 'https://placehold.co/300x200?text=After'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="After" />
                                 </div>
                             </div>
                             <div className="col-md-4">
                                 <label className="d-block fw-bold text-center mb-2 small text-muted">ลายเซ็นลูกค้า</label>
                                 <div className="rounded-3 overflow-hidden border">
-                                    <img src={selectedJob.otherImage || 'https://via.placeholder.com/300x200?text=Signature'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="Sign" />
+                                    <img src={selectedJob.otherImage || 'https://placehold.co/300x200?text=Signature'} className="img-fluid w-100" style={{ height: '180px', objectFit: 'cover' }} alt="Sign" />
                                 </div>
                             </div>
                         </div>

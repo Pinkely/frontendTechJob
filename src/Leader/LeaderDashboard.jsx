@@ -30,10 +30,14 @@ const getStatusBadge = (status) => {
         case 'รอดำเนินการ': return 'bg-warning text-dark bg-opacity-75';
         case 'Assigned':
         case 'มอบหมายแล้ว': return 'bg-primary text-white';
-        case 'PendingInspection': return 'bg-info text-dark';
+        case 'PendingInspection':
+        case 'รอตรวจงาน': return 'bg-info text-dark';
         default: return 'bg-secondary text-white';
     }
 };
+
+// กำหนด Base URL ให้ตรงกันเพื่อป้องกันปัญหาเรียก API ไม่ได้
+const API_BASE_URL = "http://172.26.48.124:3000";
 
 const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // If props are provided, use them; otherwise manage locally
@@ -58,7 +62,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     useEffect(() => {
         if (!supervisorId) return;
         setLoading(true);
-        fetch(`http://192.168.1.93:3000/works/supervisor/${supervisorId}`)
+        fetch(`${API_BASE_URL}/api/works/supervisor/${supervisorId}`)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
@@ -77,7 +81,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                     status: w.status || "Pending",
                     technicianName: w.technicianName,
                     supervisor_id: w.supervisor_id,
-                    location: (w.lat && w.lng) ? { lat: w.lat, lng: w.lng } : null,
+                    // ลบการดึงข้อมูล lat, lng ของแผนที่ออก
                 }));
                 setTasks(mapped);
             })
@@ -88,7 +92,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
     // Fetch Today's Works
     useEffect(() => {
         if (!supervisorId) return;
-        fetch(`http://192.168.1.93:3000/works/supervisor/${supervisorId}/today`)
+        fetch(`${API_BASE_URL}/api/works/supervisor/${supervisorId}/today`)
             .then(res => res.json())
             .then(data => {
                 const works = Array.isArray(data) ? data : (data.works || []);
@@ -110,7 +114,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
 
     // Fetch Technicians
     useEffect(() => {
-        fetch("http://192.168.1.93:3000/technicians")
+        fetch(`${API_BASE_URL}/api/technicians`)
             .then(res => res.json())
             .then(data => setTechnicians(data.technicians || data || []))
             .catch(err => console.error("Error fetching technicians:", err));
@@ -123,27 +127,6 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                 : [...prev, tech]
         );
     };
-
-    const currentMapLocation = useMemo(() => {
-        if (selectedWork?.location?.lat) {
-            return {
-                lat: selectedWork.location.lat,
-                lng: selectedWork.location.lng,
-                name: selectedWork.namework,
-                tech: selectedWork.technicianName || "กำลังเลือกช่าง..."
-            };
-        }
-        const activeWork = tasks.find(w => w.location?.lat);
-        if (activeWork) {
-            return {
-                lat: activeWork.location.lat,
-                lng: activeWork.location.lng,
-                name: activeWork.namework,
-                tech: activeWork.technicianName || "-"
-            };
-        }
-        return { lat: 13.7563, lng: 100.5018, name: "Main Office", tech: "-" };
-    }, [tasks, selectedWork]);
 
     return (
         <div className="container-fluid py-4" style={{ marginLeft: "14rem", backgroundColor: "#f4f4f5", minHeight: "100vh" }}>
@@ -180,7 +163,7 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                         {[
                             { title: "งานวันนี้", count: todayWorks.length, color: "#4a6ff0", icon: "bi-calendar-check" },
                             { title: "รอจ่ายงาน", count: tasks.filter(w => w.status === "Pending" || w.status === "รอดำเนินการ").length, color: "#f39c12", icon: "bi-hourglass-split" },
-                            { title: "รอตรวจงาน", count: tasks.filter(w => w.status === "PendingInspection").length, color: "#dc3545", icon: "bi-search" },
+                            { title: "รอตรวจงาน", count: tasks.filter(w => w.status === "PendingInspection" || w.status === "รอตรวจงาน").length, color: "#dc3545", icon: "bi-search" },
                             { title: "กำลังดำเนินการ", count: tasks.filter(w => w.status === "Assigned" || w.status === "มอบหมายแล้ว").length, color: "#00c0ef", icon: "bi-tools" },
                         ].map((item, i) => (
                             <div className="col-12 col-md-3" key={i}>
@@ -337,28 +320,28 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                                             onClick={async () => {
                                                 try {
                                                     const workId = selectedWork.id;
-                                                    
-                                                    // 1. อัปเดตสถานะงานหลักเป็น 'Assigned'
-                                                    await fetch(`http://localhost:3000/works/${workId}/status`, {
+
+                                                    // 1. เพิ่ม /api เข้าไปใน URL ของการอัปเดตสถานะงาน
+                                                    await fetch(`${API_BASE_URL}/api/works/${workId}/status`, {
                                                         method: 'PATCH',
                                                         headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ status: 'Assigned' })
+                                                        body: JSON.stringify({ status: 'มอบหมายแล้ว' })
                                                     });
 
-                                                    // 2. มอบหมายงานให้ช่างแต่ละคน (บันทึกลง work_assign)
-                                                    for (const tech of assignTechs) {
+                                                    // 2. เพิ่ม /api เข้าไปใน URL ของการมอบหมายงานให้ช่าง
+                                                    await Promise.all(assignTechs.map(tech => {
                                                         const techId = tech.technician_id || tech.id;
-                                                        await fetch(`http://localhost:3000/works/assign/${workId}`, {
+                                                        return fetch(`${API_BASE_URL}/api/works/assign/${workId}`, {
                                                             method: 'POST',
                                                             headers: { 'Content-Type': 'application/json' },
                                                             body: JSON.stringify({ technician_id: techId })
                                                         });
-                                                    }
+                                                    }));
 
                                                     const techNames = assignTechs.map(t => t.name).join(", ");
                                                     const updatedTasks = tasks.map(t => t.id === workId ?
-                                                        { ...t, technicianName: techNames, status: "Assigned" } : t);
-                                                    
+                                                        { ...t, technicianName: techNames, status: "มอบหมายแล้ว" } : t);
+
                                                     setTasks(updatedTasks);
                                                     alert("มอบหมายงานเรียบร้อยแล้ว");
                                                     setAssignTechs([]);
@@ -377,30 +360,6 @@ const LeaderDashboard = ({ tasks: propTasks, setTasks: setPropTasks }) => {
                                         <p>เลือกงานเพื่อดูรายละเอียด</p>
                                     </div>
                                 )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* MAP SECTION */}
-                    <div className="col-12">
-                        <div className="glass-card p-4 mb-5">
-                            <div className="d-flex justify-content-between align-items-center mb-4">
-                                <div>
-                                    <h5 className="fw-bold m-0" style={{ color: "#4a4eb7" }}>
-                                        <i className="bi bi-geo-alt-fill me-2 text-danger"></i>ตำแหน่งงาน
-                                    </h5>
-                                    <div className="mt-1">
-                                        <small className="text-muted"><i className="bi bi-pin-map me-1"></i>สถานที่: {currentMapLocation.name}</small>
-                                        <small className="text-muted ms-3"><i className="bi bi-person me-1"></i>ผู้รับผิดชอบ: {currentMapLocation.tech}</small>
-                                    </div>
-                                </div>
-                                <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
-                                    <i className="bi bi-circle-fill small me-2"></i>Live Location
-                                </span>
-                            </div>
-                            <div className="rounded-4 overflow-hidden border">
-                                <iframe title="Location Map" width="100%" height="450" style={{ border: 0 }} loading="lazy"
-                                    src={`https://maps.google.com/maps?q=${currentMapLocation.lat},${currentMapLocation.lng}&hl=th&z=15&output=embed`} />
                             </div>
                         </div>
                     </div>

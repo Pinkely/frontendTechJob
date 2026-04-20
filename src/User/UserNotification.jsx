@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, Container, Card, Button, Spinner } from 'react-bootstrap';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://172.26.48.124:3000';
 
 const UserNotification = () => {
     const navigate = useNavigate();
